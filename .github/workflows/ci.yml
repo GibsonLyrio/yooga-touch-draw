@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - name: Build for the VPS subpath
+        run: npm run build
+        env:
+          VITE_BASE_PATH: /yooga-touch-draw/
+
+  container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build production image
+        run: docker build --build-arg VITE_BASE_PATH=/yooga-touch-draw/ -t yooga-touch-draw:ci .
+      - name: Smoke test container
+        run: |
+          docker run --detach --name yooga-touch-draw-ci --publish 127.0.0.1:8080:80 yooga-touch-draw:ci
+          for attempt in 1 2 3 4 5; do
+            if curl --fail --silent http://127.0.0.1:8080/healthz; then
+              break
+            fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:8080/yooga-touch-draw/ | grep --quiet '<div id="root"></div>'
+

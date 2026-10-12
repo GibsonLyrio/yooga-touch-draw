@@ -1,0 +1,18 @@
+services:
+  app:
+    build:
+      context: .
+      args:
+        VITE_BASE_PATH: /yooga-touch-draw/
+    image: yooga-touch-draw:local
+    container_name: yooga-touch-draw
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${YOOGA_TOUCH_DRAW_PORT:-4174}:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
