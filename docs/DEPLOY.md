@@ -1,8 +1,9 @@
 # Deploy na VPS
 
 O build de produção usa `VITE_BASE_PATH=/yooga-touch-draw/` e é servido por
-Nginx no container. Por padrão, o Compose publica somente em
-`127.0.0.1:4174`, evitando exposição direta à internet.
+Nginx na porta `8000` do container. O Compose não publica portas no host: ele
+conecta o serviço `yooga-touch-draw` à rede Docker externa `proxy`, onde o Caddy
+já consegue alcançá-lo.
 
 ## Primeira instalação na VPS
 
@@ -10,25 +11,28 @@ Nginx no container. Por padrão, o Compose publica somente em
 git clone git@github.com:GibsonLyrio/yooga-touch-draw.git
 cd yooga-touch-draw
 docker compose up -d --build
-curl --fail http://127.0.0.1:4174/healthz
+docker exec yooga-touch-draw wget -qO- http://127.0.0.1:8000/healthz
 ```
 
-Se a porta `4174` já estiver ocupada, defina `YOOGA_TOUCH_DRAW_PORT` no
-ambiente do Compose.
+Antes da primeira subida, a rede externa precisa existir (`docker network
+inspect proxy`). Ela já é compartilhada pelos containers do Caddy e dos demais
+sites na VPS.
 
 ## Rota no Caddy
 
-Preservando o prefixo (recomendado):
+Na VPS atual, o Caddy remove o prefixo antes de encaminhar ao container:
 
 ```caddyfile
-handle /yooga-touch-draw* {
-    reverse_proxy 127.0.0.1:4174
+redir /yooga-touch-draw /yooga-touch-draw/ 308
+
+handle_path /yooga-touch-draw/* {
+    reverse_proxy yooga-touch-draw:8000
 }
 ```
 
-O container também funciona com `handle_path`, caso a configuração atual já
-remova o prefixo. Valide e recarregue o Caddy somente depois de conferir o
-Caddyfile existente:
+O redirecionamento cobre a URL sem a barra final, que não corresponde ao
+matcher `/*`. Valide e recarregue o Caddy somente depois de conferir o Caddyfile
+existente:
 
 ```bash
 caddy validate --config /etc/caddy/Caddyfile

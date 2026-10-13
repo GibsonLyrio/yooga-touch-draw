@@ -18,7 +18,7 @@ COPY --from=build /app/dist/ /usr/share/nginx/html/yooga-touch-draw/
 
 # Keep both layouts available. This makes the container compatible with a
 # Caddy route that either preserves or strips /yooga-touch-draw.
-EXPOSE 80
+EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget -qO- http://127.0.0.1/healthz || exit 1
+  CMD wget -qO- http://127.0.0.1:8000/healthz || exit 1
