@@ -22,7 +22,11 @@ export function Toolbar({ onAdd }: { onAdd: (type: ElementType) => void }) {
             aria-label={`Adicionar ${ELEMENTS[type].label.toLowerCase()}`}
           >
             <span className={`element-preview preview-${type}`}>
-              <svg viewBox="-150 -75 300 150" aria-hidden="true">
+              <svg
+                viewBox="-150 -75 300 150"
+                preserveAspectRatio="xMidYMid meet"
+                aria-hidden="true"
+              >
                 <ElementShape type={type} {...ELEMENTS[type]} />
               </svg>
               <span className="add-mark">
