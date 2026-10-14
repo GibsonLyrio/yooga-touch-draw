@@ -351,6 +351,12 @@ p {
 .drawing-element:active {
   cursor: grabbing;
 }
+.drawing-element.is-locked {
+  cursor: default;
+}
+.resize-handle {
+  cursor: nwse-resize;
+}
 .empty-state {
   position: absolute;
   inset: 0;
@@ -447,6 +453,31 @@ p {
 }
 .property-section {
   margin-top: 24px;
+}
+.dimensions-readout > span,
+.lock-control strong {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--y-color-text-primary);
+}
+.dimensions-readout > strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.875rem;
+}
+.lock-control {
+  padding: 14px;
+  border: 1px solid var(--y-color-border-subtle);
+  border-radius: var(--y-radius-md);
+}
+.lock-button {
+  width: 100%;
+  margin-top: 12px;
+}
+.lock-button.is-active {
+  color: var(--y-color-action-on-solid);
+  background: var(--y-color-action-solid);
+  border-color: var(--y-color-action-solid);
 }
 .property-label {
   display: flex;

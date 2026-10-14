@@ -13,12 +13,19 @@ function createElementId(): string {
 
 export const ELEMENTS: Record<
   ElementType,
-  { label: string; width: number; height: number }
+  { label: string; width: number; height: number; category: "space" | "furniture" | "operation" }
 > = {
-  "round-table": { label: "Mesa redonda", width: 100, height: 100 },
-  "rect-table": { label: "Mesa retangular", width: 160, height: 90 },
-  chair: { label: "Cadeira", width: 56, height: 60 },
-  wall: { label: "Parede", width: 240, height: 24 },
+  room: { label: "Cômodo", width: 360, height: 240, category: "space" },
+  "round-table": { label: "Mesa redonda", width: 100, height: 100, category: "furniture" },
+  "rect-table": { label: "Mesa retangular", width: 160, height: 90, category: "furniture" },
+  chair: { label: "Cadeira", width: 56, height: 60, category: "furniture" },
+  printer: { label: "Impressora", width: 76, height: 58, category: "operation" },
+  computer: { label: "Computador", width: 90, height: 72, category: "operation" },
+  checkout: { label: "Caixa", width: 110, height: 72, category: "operation" },
+  kitchen: { label: "Cozinha", width: 180, height: 120, category: "operation" },
+  bar: { label: "Bar", width: 190, height: 72, category: "operation" },
+  stock: { label: "Estoque", width: 150, height: 110, category: "operation" },
+  fridge: { label: "Geladeira", width: 72, height: 110, category: "operation" },
 };
 
 export function createElement(
@@ -35,5 +42,12 @@ export function createElement(
     if (!scene.some((element) => Math.hypot(element.x - x, element.y - y) < 24))
       break;
   }
-  return { id: createElementId(), type, x, y, width, height, rotation: 0 };
+  return { id: createElementId(), type, x, y, width, height, rotation: 0, locked: false };
+}
+
+export function orderElementsForDisplay(elements: DrawingElement[]): DrawingElement[] {
+  return [
+    ...elements.filter((element) => element.type === "room"),
+    ...elements.filter((element) => element.type !== "room"),
+  ];
 }

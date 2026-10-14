@@ -23,7 +23,9 @@ export default function App() {
   }
   function add(type: ElementType) {
     const element = createElement(type, elements);
-    setElements((current) => [...current, element]);
+    setElements((current) =>
+      type === "room" ? [element, ...current] : [...current, element],
+    );
     setSelectedId(element.id);
     announce(`${ELEMENTS[type].label} adicionada.`);
   }
@@ -213,11 +215,11 @@ export default function App() {
         <ol className="help-steps">
           <li>
             <strong>Adicione os elementos</strong>
-            <p>Escolha mesas, cadeiras e paredes na biblioteca.</p>
+            <p>Escolha cômodos, móveis e itens operacionais na biblioteca.</p>
           </li>
           <li>
             <strong>Organize o ambiente</strong>
-            <p>Arraste os itens e ajuste tamanho e rotação em Propriedades.</p>
+            <p>Arraste os itens e use a alça no canto para redimensionar. Cômodos também podem ser bloqueados.</p>
           </li>
           <li>
             <strong>Leve sua ideia com você</strong>

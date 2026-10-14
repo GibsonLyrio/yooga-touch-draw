@@ -13,6 +13,8 @@ const paths = {
   info: "M12 11v6m0-10h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0",
   warning: "m12 3 10 18H2zM12 9v5m0 3h.01",
   grid: "M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z",
+  lock: "M6 10V7a6 6 0 0 1 12 0v3M5 10h14v11H5z",
+  unlock: "M8 10V7a5 5 0 0 1 9-3M5 10h14v11H5z",
 } as const;
 
 export function Icon({

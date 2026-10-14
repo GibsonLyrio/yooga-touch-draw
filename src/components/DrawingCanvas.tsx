@@ -5,8 +5,8 @@ import {
   type PointerEvent,
   type RefObject,
 } from "react";
-import { ELEMENTS, SCENE_HEIGHT, SCENE_WIDTH } from "../editor/elements";
-import { clientToScene, moveElement } from "../editor/interactions";
+import { ELEMENTS, orderElementsForDisplay, SCENE_HEIGHT, SCENE_WIDTH } from "../editor/elements";
+import { clientToScene, moveElement, resizeElementFromCorner } from "../editor/interactions";
 import type { DrawingElement, Point } from "../editor/types";
 import { ElementShape } from "./ElementShape";
 import { Icon } from "./Icon";
@@ -29,7 +29,8 @@ export function DrawingCanvas({
   const drag = useRef<{
     pointerId: number;
     element: DrawingElement;
-    offset: Point;
+    offset?: Point;
+    mode: "move" | "resize";
   } | null>(null);
   const [minimumTarget, setMinimumTarget] = useState(44);
 
@@ -49,19 +50,32 @@ export function DrawingCanvas({
     element: DrawingElement,
   ) {
     if (!event.isPrimary || event.button !== 0 || drag.current) return;
+    event.stopPropagation();
+    onSelect(element.id);
+    if (element.locked) return;
     const svg = svgRef.current;
     if (!svg) return;
     const point = clientToScene(svg, event.clientX, event.clientY);
     if (!point) return;
-    event.stopPropagation();
     event.preventDefault();
-    onSelect(element.id);
     svg.setPointerCapture(event.pointerId);
     drag.current = {
       pointerId: event.pointerId,
       element,
       offset: { x: point.x - element.x, y: point.y - element.y },
+      mode: "move",
     };
+  }
+
+  function startResize(event: PointerEvent<SVGCircleElement>, element: DrawingElement) {
+    if (!event.isPrimary || event.button !== 0 || drag.current || element.locked) return;
+    const svg = svgRef.current;
+    if (!svg) return;
+    event.stopPropagation();
+    event.preventDefault();
+    onSelect(element.id);
+    svg.setPointerCapture(event.pointerId);
+    drag.current = { pointerId: event.pointerId, element, mode: "resize" };
   }
 
   function handleMove(event: PointerEvent<SVGSVGElement>) {
@@ -72,13 +86,15 @@ export function DrawingCanvas({
       event.clientX,
       event.clientY,
     );
-    if (point)
-      onChange(
-        moveElement(active.element, {
-          x: point.x - active.offset.x,
-          y: point.y - active.offset.y,
-        }),
-      );
+    if (!point) return;
+    if (active.mode === "resize") {
+      onChange(resizeElementFromCorner(active.element, point));
+    } else if (active.offset) {
+      onChange(moveElement(active.element, {
+        x: point.x - active.offset.x,
+        y: point.y - active.offset.y,
+      }));
+    }
   }
 
   function endDrag(event: PointerEvent<SVGSVGElement>) {
@@ -125,12 +141,12 @@ export function DrawingCanvas({
           height={SCENE_HEIGHT}
           fill="url(#canvas-dots)"
         />
-        {elements.map((element) => (
+        {orderElementsForDisplay(elements).map((element) => (
           <g
             key={element.id}
             transform={`translate(${element.x} ${element.y}) rotate(${element.rotation})`}
             onPointerDown={(event) => startDrag(event, element)}
-            className="drawing-element"
+            className={`drawing-element ${element.locked ? "is-locked" : ""}`}
             role="button"
             tabIndex={0}
             aria-label={ELEMENTS[element.type].label}
@@ -141,6 +157,7 @@ export function DrawingCanvas({
                 event.preventDefault();
                 onSelect(element.id);
               }
+              if (element.locked) return;
               const step = event.shiftKey ? 1 : 10;
               const directions: Record<string, Point> = {
                 ArrowLeft: { x: -step, y: 0 },
@@ -180,22 +197,40 @@ export function DrawingCanvas({
         {elements
           .filter((element) => element.id === selectedId)
           .map((element) => (
-            <rect
+            <g
               key={element.id}
               data-editor-only="true"
-              pointerEvents="none"
               transform={`translate(${element.x} ${element.y}) rotate(${element.rotation})`}
-              x={-element.width / 2 - 6}
-              y={-element.height / 2 - 6}
-              width={element.width + 12}
-              height={element.height + 12}
-              rx="6"
-              fill="none"
-              stroke="var(--y-color-border-selected)"
-              strokeWidth="2"
-              strokeDasharray="6 4"
-              vectorEffect="non-scaling-stroke"
-            />
+            >
+              <rect
+                pointerEvents="none"
+                x={-element.width / 2 - 6}
+                y={-element.height / 2 - 6}
+                width={element.width + 12}
+                height={element.height + 12}
+                rx="6"
+                fill="none"
+                stroke="var(--y-color-border-selected)"
+                strokeWidth="2"
+                strokeDasharray="6 4"
+                vectorEffect="non-scaling-stroke"
+              />
+              {!element.locked && (
+                <circle
+                  className="resize-handle"
+                  cx={element.width / 2 + 6}
+                  cy={element.height / 2 + 6}
+                  r={Math.max(8, minimumTarget / 4)}
+                  fill="var(--y-color-action-solid)"
+                  stroke="#fff"
+                  strokeWidth="3"
+                  vectorEffect="non-scaling-stroke"
+                  role="button"
+                  aria-label={`Redimensionar ${ELEMENTS[element.type].label.toLowerCase()}`}
+                  onPointerDown={(event) => startResize(event, element)}
+                />
+              )}
+            </g>
           ))}
       </svg>
       {elements.length === 0 && (

@@ -33,6 +33,49 @@ export function moveElement(
   };
 }
 
+export function resizeElementFromCorner(
+  element: DrawingElement,
+  pointer: Point,
+): DrawingElement {
+  const radians = (-element.rotation * Math.PI) / 180;
+  const dx = pointer.x - element.x;
+  const dy = pointer.y - element.y;
+  const localPointer = {
+    x: dx * Math.cos(radians) - dy * Math.sin(radians),
+    y: dx * Math.sin(radians) + dy * Math.cos(radians),
+  };
+  const opposite = { x: -element.width / 2, y: -element.height / 2 };
+  let width = Math.max(40, localPointer.x - opposite.x);
+  let height = Math.max(40, localPointer.y - opposite.y);
+
+  if (element.type !== "room") {
+    const ratio = element.width / element.height;
+    const scale = Math.max(width / element.width, height / element.height);
+    width = Math.max(32, element.width * scale);
+    height = width / ratio;
+    const fitScale = Math.min(1, (SCENE_WIDTH - 8) / width, (SCENE_HEIGHT - 8) / height);
+    width *= fitScale;
+    height *= fitScale;
+  } else {
+    width = Math.min(SCENE_WIDTH - 8, Math.max(80, width));
+    height = Math.min(SCENE_HEIGHT - 8, Math.max(80, height));
+  }
+
+  const localCenter = {
+    x: opposite.x + width / 2,
+    y: opposite.y + height / 2,
+  };
+  const forward = (element.rotation * Math.PI) / 180;
+  const resized = {
+    ...element,
+    width,
+    height,
+    x: element.x + localCenter.x * Math.cos(forward) - localCenter.y * Math.sin(forward),
+    y: element.y + localCenter.x * Math.sin(forward) + localCenter.y * Math.cos(forward),
+  };
+  return moveElement(resized, resized);
+}
+
 export function rotateElement(element: DrawingElement): DrawingElement {
   const rotated = { ...element, rotation: (element.rotation + 45) % 360 };
   return moveElement(rotated, rotated);

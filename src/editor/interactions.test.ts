@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { createElement, ELEMENTS, SCENE_HEIGHT, SCENE_WIDTH } from "./elements";
+import { createElement, ELEMENTS, orderElementsForDisplay, SCENE_HEIGHT, SCENE_WIDTH } from "./elements";
 import {
   moveElement,
   resizeElement,
+  resizeElementFromCorner,
   rotateElement,
   rotatedBounds,
 } from "./interactions";
@@ -56,6 +57,7 @@ describe("geometria", () => {
     width: 160,
     height: 90,
     rotation: 0,
+    locked: false,
   };
 
   it("move sem alterar o objeto original", () => {
@@ -112,5 +114,43 @@ describe("geometria", () => {
     const bounds = rotatedBounds(element);
     expect(element.x + bounds.width / 2).toBeLessThanOrEqual(SCENE_WIDTH);
     expect(element.y + bounds.height / 2).toBeLessThanOrEqual(SCENE_HEIGHT);
+  });
+
+  it("mantém a proporção de um ícone ao arrastar a alça", () => {
+    const resized = resizeElementFromCorner(table, { x: 900, y: 700 });
+    expect(resized.width / resized.height).toBeCloseTo(table.width / table.height);
+    expect(resized.width).toBeGreaterThan(table.width);
+  });
+
+  it("permite alterar livremente a proporção de um cômodo", () => {
+    const room = createElement("room", []);
+    const resized = resizeElementFromCorner(room, { x: 900, y: 450 });
+    expect(resized.width).toBeGreaterThan(room.width);
+    expect(resized.height).toBeLessThan(room.height);
+    expect(resized.width / resized.height).not.toBeCloseTo(room.width / room.height);
+  });
+
+  it("limita qualquer resize às dimensões da cena", () => {
+    for (const type of ["room", "computer"] as const) {
+      const resized = resizeElementFromCorner(createElement(type, []), { x: 10000, y: 10000 });
+      expect(resized.width).toBeLessThanOrEqual(SCENE_WIDTH);
+      expect(resized.height).toBeLessThanOrEqual(SCENE_HEIGHT);
+    }
+  });
+});
+
+describe("camadas", () => {
+  it("sempre coloca os cômodos antes dos demais elementos", () => {
+    const chair = createElement("chair", []);
+    const firstRoom = createElement("room", []);
+    const computer = createElement("computer", []);
+    const secondRoom = createElement("room", []);
+    const ordered = orderElementsForDisplay([chair, firstRoom, computer, secondRoom]);
+    expect(ordered.map((element) => element.type)).toEqual([
+      "room",
+      "room",
+      "chair",
+      "computer",
+    ]);
   });
 });

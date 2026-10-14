@@ -40,7 +40,7 @@ export function SelectionControls({ element, onChange, onDelete }: Props) {
               Selecionado
             </span>
           </div>
-          <div className="property-section">
+          {element.type !== "room" && <div className="property-section">
             <div className="property-label">
               <label htmlFor="element-size">Tamanho</label>
               <output htmlFor="element-size">{scale}%</output>
@@ -63,7 +63,14 @@ export function SelectionControls({ element, onChange, onDelete }: Props) {
               <span>50%</span>
               <span>200%</span>
             </div>
-          </div>
+          </div>}
+          {element.type === "room" && (
+            <div className="property-section dimensions-readout">
+              <span>Dimensões</span>
+              <strong>{Math.round(element.width)} × {Math.round(element.height)} px</strong>
+              <p className="field-help">Arraste a alça no canto para ajustar largura e altura livremente.</p>
+            </div>
+          )}
           <div className="property-section rotation-control">
             <div className="property-label">
               <span>Rotação</span>
@@ -71,20 +78,36 @@ export function SelectionControls({ element, onChange, onDelete }: Props) {
             </div>
             <button
               onClick={() => onChange(rotateElement(element))}
-              disabled={element.type === "round-table"}
+              disabled={element.type === "round-table" || element.type === "room" || element.locked}
               aria-describedby={
-                element.type === "round-table" ? "rotation-help" : undefined
+                element.type === "round-table" || element.type === "room" ? "rotation-help" : undefined
               }
             >
               <Icon name="rotate" />
               Girar 45°
             </button>
-            {element.type === "round-table" && (
+            {(element.type === "round-table" || element.type === "room") && (
               <p className="field-help" id="rotation-help">
-                Mesas redondas não precisam de rotação.
+                {element.type === "room" ? "Cômodos permanecem alinhados à planta." : "Mesas redondas não precisam de rotação."}
               </p>
             )}
           </div>
+          {element.type === "room" && (
+            <div className="property-section lock-control">
+              <div>
+                <strong>Bloquear cômodo</strong>
+                <p className="field-help">Impede movimentos e alterações de tamanho.</p>
+              </div>
+              <button
+                className={element.locked ? "lock-button is-active" : "lock-button"}
+                aria-pressed={element.locked}
+                onClick={() => onChange({ ...element, locked: !element.locked })}
+              >
+                <Icon name={element.locked ? "lock" : "unlock"} />
+                {element.locked ? "Bloqueado" : "Bloquear"}
+              </button>
+            </div>
+          )}
           <div className="selection-actions">
             <button className="danger" onClick={onDelete}>
               <Icon name="trash" />

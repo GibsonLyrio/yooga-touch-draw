@@ -1,4 +1,15 @@
-export type ElementType = "round-table" | "rect-table" | "chair" | "wall";
+export type ElementType =
+  | "room"
+  | "round-table"
+  | "rect-table"
+  | "chair"
+  | "printer"
+  | "computer"
+  | "checkout"
+  | "kitchen"
+  | "bar"
+  | "stock"
+  | "fridge";
 
 export interface DrawingElement {
   id: string;
@@ -9,6 +20,7 @@ export interface DrawingElement {
   width: number;
   height: number;
   rotation: number;
+  locked: boolean;
 }
 
 export interface Point {
