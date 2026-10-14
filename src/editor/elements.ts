@@ -42,7 +42,17 @@ export function createElement(
     if (!scene.some((element) => Math.hypot(element.x - x, element.y - y) < 24))
       break;
   }
-  return { id: createElementId(), type, x, y, width, height, rotation: 0, locked: false };
+  return {
+    id: createElementId(),
+    type,
+    x,
+    y,
+    width,
+    height,
+    rotation: 0,
+    locked: false,
+    ...(type === "room" ? { roomName: "Cômodo" } : {}),
+  };
 }
 
 export function orderElementsForDisplay(elements: DrawingElement[]): DrawingElement[] {

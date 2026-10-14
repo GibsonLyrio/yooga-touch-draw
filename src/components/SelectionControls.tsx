@@ -30,10 +30,16 @@ export function SelectionControls({ element, onChange, onDelete }: Props) {
         <>
           <div className="selection-preview">
             <svg viewBox="-150 -85 300 170" aria-hidden="true">
-              <ElementShape type={element.type} {...ELEMENTS[element.type]} />
+              <ElementShape
+                type={element.type}
+                roomName={element.roomName}
+                {...ELEMENTS[element.type]}
+              />
             </svg>
             <strong className="selected-name">
-              {ELEMENTS[element.type].label}
+              {element.type === "room"
+                ? element.roomName?.trim() || ELEMENTS[element.type].label
+                : ELEMENTS[element.type].label}
             </strong>
             <span className="selection-badge">
               <span />
@@ -64,6 +70,22 @@ export function SelectionControls({ element, onChange, onDelete }: Props) {
               <span>200%</span>
             </div>
           </div>}
+          {element.type === "room" && (
+            <div className="property-section room-name-control">
+              <label htmlFor="room-name">Nome do cômodo</label>
+              <input
+                id="room-name"
+                type="text"
+                maxLength={40}
+                value={element.roomName ?? ""}
+                placeholder="Ex.: Salão"
+                onChange={(event) =>
+                  onChange({ ...element, roomName: event.target.value })
+                }
+              />
+              <p className="field-help">O nome aparece no canto do cômodo.</p>
+            </div>
+          )}
           {element.type === "room" && (
             <div className="property-section dimensions-readout">
               <span>Dimensões</span>

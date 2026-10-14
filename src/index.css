@@ -255,6 +255,18 @@ p {
   display: grid;
   gap: 12px;
   margin-top: 24px;
+  height: 560px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 8px;
+  scrollbar-gutter: stable;
+}
+.element-buttons::-webkit-scrollbar {
+  width: 8px;
+}
+.element-buttons::-webkit-scrollbar-thumb {
+  background: var(--y-color-border-control);
+  border-radius: var(--y-radius-pill);
 }
 .element-button {
   flex-direction: column;
@@ -459,6 +471,22 @@ p {
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--y-color-text-primary);
+}
+.room-name-control label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--y-color-text-primary);
+}
+.room-name-control input {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 9px 12px;
+  color: var(--y-color-text-body);
+  background: var(--y-color-surface-base);
+  border: 1px solid var(--y-color-border-control);
+  border-radius: var(--y-radius-md);
 }
 .dimensions-readout > strong {
   display: block;
@@ -691,6 +719,7 @@ p {
   .element-buttons {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     margin-top: 16px;
+    height: 300px;
   }
   .element-preview {
     min-height: 72px;
@@ -834,6 +863,7 @@ p {
   .element-buttons {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
+    height: 360px;
   }
   .element-button {
     font-size: 0.75rem;

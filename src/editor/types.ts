@@ -21,6 +21,7 @@ export interface DrawingElement {
   height: number;
   rotation: number;
   locked: boolean;
+  roomName?: string;
 }
 
 export interface Point {

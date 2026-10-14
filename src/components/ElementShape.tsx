@@ -1,9 +1,9 @@
 import type { DrawingElement } from "../editor/types";
 
-type Props = Pick<DrawingElement, "type" | "width" | "height">;
+type Props = Pick<DrawingElement, "type" | "width" | "height" | "roomName">;
 
 /** A mesma geometria e as mesmas cores são usadas na biblioteca, cena e PNG. */
-export function ElementShape({ type, width: w, height: h }: Props) {
+export function ElementShape({ type, width: w, height: h, roomName }: Props) {
   const style = {
     stroke: "#475467",
     strokeWidth: 2.5,
@@ -11,6 +11,11 @@ export function ElementShape({ type, width: w, height: h }: Props) {
   };
   switch (type) {
     case "room":
+      const label = (roomName?.trim() || "Cômodo").toLocaleUpperCase("pt-BR");
+      const labelFontSize = Math.min(
+        18,
+        Math.max(9, (w - 36) / Math.max(label.length * 0.62, 1)),
+      );
       return (
         <g>
           <rect
@@ -24,8 +29,14 @@ export function ElementShape({ type, width: w, height: h }: Props) {
             strokeWidth={5}
             strokeDasharray="12 6"
           />
-          <text x={-w / 2 + 18} y={-h / 2 + 30} fill="#667085" fontSize={18} fontWeight={600}>
-            CÔMODO
+          <text
+            x={-w / 2 + 18}
+            y={-h / 2 + Math.max(22, labelFontSize + 12)}
+            fill="#667085"
+            fontSize={labelFontSize}
+            fontWeight={600}
+          >
+            {label}
           </text>
         </g>
       );

@@ -46,6 +46,12 @@ describe("inserção", () => {
     expect(second.x).toBeGreaterThan(first.x);
     expect(first.x).toBe(600);
   });
+
+  it("cria cômodo com um nome padrão editável", () => {
+    const room = createElement("room", []);
+    expect(room.roomName).toBe("Cômodo");
+    expect(createElement("chair", []).roomName).toBeUndefined();
+  });
 });
 
 describe("geometria", () => {

@@ -149,7 +149,11 @@ export function DrawingCanvas({
             className={`drawing-element ${element.locked ? "is-locked" : ""}`}
             role="button"
             tabIndex={0}
-            aria-label={ELEMENTS[element.type].label}
+            aria-label={
+              element.type === "room"
+                ? element.roomName?.trim() || ELEMENTS[element.type].label
+                : ELEMENTS[element.type].label
+            }
             aria-pressed={element.id === selectedId}
             aria-describedby="canvas-keyboard-help"
             onKeyDown={(event) => {
