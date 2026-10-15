@@ -8,9 +8,10 @@ interface Props {
   element: DrawingElement | undefined;
   onChange: (element: DrawingElement) => void;
   onDelete: () => void;
+  onDuplicate: () => void;
 }
 
-export function SelectionControls({ element, onChange, onDelete }: Props) {
+export function SelectionControls({ element, onChange, onDelete, onDuplicate }: Props) {
   const scale = element
     ? Math.round((element.width / ELEMENTS[element.type].width) * 100)
     : 100;
@@ -131,6 +132,10 @@ export function SelectionControls({ element, onChange, onDelete }: Props) {
             </div>
           )}
           <div className="selection-actions">
+            <button onClick={onDuplicate} title="Duplicar (Ctrl+C, Ctrl+V)">
+              <Icon name="copy" />
+              Duplicar elemento
+            </button>
             <button className="danger" onClick={onDelete}>
               <Icon name="trash" />
               Excluir elemento

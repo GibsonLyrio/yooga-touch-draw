@@ -208,6 +208,17 @@ p {
   gap: 12px;
   flex-shrink: 0;
 }
+.history-actions {
+  display: flex;
+  gap: 4px;
+  padding-right: 12px;
+  margin-right: 4px;
+  border-right: 1px solid var(--y-color-border-subtle);
+}
+.history-actions button {
+  width: 44px;
+  padding: 0;
+}
 .primary {
   background: var(--y-color-action-solid);
   border-color: var(--y-color-action-solid);
@@ -561,6 +572,9 @@ p {
 }
 .selection-actions button {
   width: 100%;
+}
+.selection-actions button + button {
+  margin-top: 8px;
 }
 .danger {
   border-color: var(--y-color-action-destructive);

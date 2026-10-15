@@ -11,6 +11,25 @@ function createElementId(): string {
   ).join("");
 }
 
+/** Cria uma cópia independente, preservando todas as propriedades editáveis. */
+export function duplicateElement(
+  source: DrawingElement,
+  scene: DrawingElement[],
+): DrawingElement {
+  let copy = { ...source, id: createElementId() };
+  for (let attempt = 1; attempt <= 12; attempt++) {
+    const offset = attempt * 24;
+    copy = {
+      ...copy,
+      x: Math.min(SCENE_WIDTH - copy.width / 2, Math.max(copy.width / 2, source.x + offset)),
+      y: Math.min(SCENE_HEIGHT - copy.height / 2, Math.max(copy.height / 2, source.y + offset)),
+    };
+    if (!scene.some((element) => Math.hypot(element.x - copy.x, element.y - copy.y) < 16))
+      break;
+  }
+  return copy;
+}
+
 export const ELEMENTS: Record<
   ElementType,
   { label: string; width: number; height: number; category: "space" | "furniture" | "operation" }

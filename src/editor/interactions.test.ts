@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createElement, ELEMENTS, orderElementsForDisplay, SCENE_HEIGHT, SCENE_WIDTH } from "./elements";
+import { createElement, duplicateElement, ELEMENTS, orderElementsForDisplay, SCENE_HEIGHT, SCENE_WIDTH } from "./elements";
 import {
   moveElement,
   resizeElement,
@@ -10,6 +10,30 @@ import {
 import type { DrawingElement, ElementType } from "./types";
 
 describe("inserção", () => {
+  it("duplica preservando características e criando uma instância independente", () => {
+    const source = {
+      ...createElement("room", []),
+      width: 480,
+      height: 310,
+      rotation: 0,
+      locked: true,
+      roomName: "Varanda",
+    };
+    const copy = duplicateElement(source, [source]);
+
+    expect(copy).toMatchObject({
+      type: source.type,
+      width: 480,
+      height: 310,
+      rotation: 0,
+      locked: true,
+      roomName: "Varanda",
+    });
+    expect(copy.id).not.toBe(source.id);
+    expect(copy.x).not.toBe(source.x);
+    expect(copy.y).not.toBe(source.y);
+  });
+
   it("cria elementos distintos sem randomUUID em HTTP na rede local", () => {
     const randomUUID = vi.spyOn(crypto, "randomUUID");
     Object.defineProperty(crypto, "randomUUID", { value: undefined, configurable: true });

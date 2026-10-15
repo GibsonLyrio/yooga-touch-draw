@@ -16,6 +16,8 @@ interface Props {
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   onChange: (element: DrawingElement) => void;
+  onInteractionStart: () => void;
+  onInteractionEnd: () => void;
   svgRef: RefObject<SVGSVGElement | null>;
 }
 
@@ -24,6 +26,8 @@ export function DrawingCanvas({
   selectedId,
   onSelect,
   onChange,
+  onInteractionStart,
+  onInteractionEnd,
   svgRef,
 }: Props) {
   const drag = useRef<{
@@ -58,6 +62,7 @@ export function DrawingCanvas({
     const point = clientToScene(svg, event.clientX, event.clientY);
     if (!point) return;
     event.preventDefault();
+    onInteractionStart();
     svg.setPointerCapture(event.pointerId);
     drag.current = {
       pointerId: event.pointerId,
@@ -74,6 +79,7 @@ export function DrawingCanvas({
     event.stopPropagation();
     event.preventDefault();
     onSelect(element.id);
+    onInteractionStart();
     svg.setPointerCapture(event.pointerId);
     drag.current = { pointerId: event.pointerId, element, mode: "resize" };
   }
@@ -100,6 +106,7 @@ export function DrawingCanvas({
   function endDrag(event: PointerEvent<SVGSVGElement>) {
     if (drag.current?.pointerId !== event.pointerId) return;
     drag.current = null;
+    onInteractionEnd();
     if (event.currentTarget.hasPointerCapture(event.pointerId))
       event.currentTarget.releasePointerCapture(event.pointerId);
   }
@@ -121,6 +128,7 @@ export function DrawingCanvas({
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
         onLostPointerCapture={() => {
+          if (drag.current) onInteractionEnd();
           drag.current = null;
         }}
       >

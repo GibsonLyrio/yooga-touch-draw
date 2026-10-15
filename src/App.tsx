@@ -1,55 +1,150 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DrawingCanvas } from "./components/DrawingCanvas";
 import { SelectionControls } from "./components/SelectionControls";
 import { Toolbar } from "./components/Toolbar";
 import { Dialog } from "./components/Dialog";
 import { Icon } from "./components/Icon";
-import { createElement, ELEMENTS } from "./editor/elements";
+import { createElement, duplicateElement, ELEMENTS } from "./editor/elements";
 import { exportPng } from "./editor/export";
 import type { DrawingElement, ElementType } from "./editor/types";
 import yoogaSymbol from "./assets/yooga-symbol.png";
 
 export default function App() {
   const [elements, setElements] = useState<DrawingElement[]>([]);
+  const [past, setPast] = useState<DrawingElement[][]>([]);
+  const [future, setFuture] = useState<DrawingElement[][]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [feedback, setFeedback] = useState({ text: "", error: false });
   const [dialog, setDialog] = useState<"clear" | "help" | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const elementsRef = useRef(elements);
+  const pastRef = useRef(past);
+  const futureRef = useRef(future);
+  const transactionRef = useRef<DrawingElement[] | null>(null);
+  const clipboardRef = useRef<DrawingElement | null>(null);
   const selected = elements.find((element) => element.id === selectedId);
 
   function announce(text: string, error = false) {
     setFeedback({ text, error });
   }
+  function replaceElements(next: DrawingElement[], record = true) {
+    const current = elementsRef.current;
+    if (next === current) return;
+    if (record) {
+      const nextPast = [...pastRef.current, current].slice(-100);
+      pastRef.current = nextPast;
+      futureRef.current = [];
+      setPast(nextPast);
+      setFuture([]);
+    }
+    elementsRef.current = next;
+    setElements(next);
+  }
+  function undo() {
+    const previous = pastRef.current.at(-1);
+    if (!previous) return;
+    const nextPast = pastRef.current.slice(0, -1);
+    const nextFuture = [elementsRef.current, ...futureRef.current].slice(0, 100);
+    pastRef.current = nextPast;
+    futureRef.current = nextFuture;
+    setPast(nextPast);
+    setFuture(nextFuture);
+    replaceElements(previous, false);
+    announce("Última ação desfeita.");
+  }
+  function redo() {
+    const next = futureRef.current[0];
+    if (!next) return;
+    const nextPast = [...pastRef.current, elementsRef.current].slice(-100);
+    const nextFuture = futureRef.current.slice(1);
+    pastRef.current = nextPast;
+    futureRef.current = nextFuture;
+    setPast(nextPast);
+    setFuture(nextFuture);
+    replaceElements(next, false);
+    announce("Ação refeita.");
+  }
+  function startInteraction() {
+    transactionRef.current ??= elementsRef.current;
+  }
+  function endInteraction() {
+    const before = transactionRef.current;
+    transactionRef.current = null;
+    if (!before || before === elementsRef.current) return;
+    const nextPast = [...pastRef.current, before].slice(-100);
+    pastRef.current = nextPast;
+    futureRef.current = [];
+    setPast(nextPast);
+    setFuture([]);
+  }
   function add(type: ElementType) {
     const element = createElement(type, elements);
-    setElements((current) =>
-      type === "room" ? [element, ...current] : [...current, element],
-    );
+    replaceElements(type === "room" ? [element, ...elementsRef.current] : [...elementsRef.current, element]);
     setSelectedId(element.id);
     announce(`${ELEMENTS[type].label} adicionada.`);
   }
   function update(element: DrawingElement) {
-    setElements((current) =>
-      current.map((item) => (item.id === element.id ? element : item)),
-    );
+    const next = elementsRef.current.map((item) => (item.id === element.id ? element : item));
+    replaceElements(next, transactionRef.current === null);
   }
   function removeSelected() {
-    setElements((current) =>
-      current.filter((element) => element.id !== selectedId),
-    );
+    replaceElements(elementsRef.current.filter((element) => element.id !== selectedId));
     setSelectedId(null);
     announce("Elemento excluído.");
     // The delete button leaves the DOM; return keyboard users to the drawing.
     svgRef.current?.focus();
   }
   function clear() {
-    setElements([]);
+    replaceElements([]);
     setSelectedId(null);
     setDialog(null);
     requestAnimationFrame(() => svgRef.current?.focus());
     announce("Desenho limpo. Seu espaço está pronto para uma nova ideia.");
   }
+  function copySelected() {
+    const source = elementsRef.current.find((element) => element.id === selectedId);
+    if (!source) return;
+    clipboardRef.current = { ...source };
+    announce("Elemento copiado. Use Ctrl+V para colar.");
+  }
+  function pasteCopied() {
+    if (!clipboardRef.current) return;
+    const copy = duplicateElement(clipboardRef.current, elementsRef.current);
+    replaceElements([...elementsRef.current, copy]);
+    setSelectedId(copy.id);
+    announce(`${ELEMENTS[copy.type].label} duplicado.`);
+  }
+  function duplicateSelected() {
+    copySelected();
+    pasteCopied();
+  }
+
+  useEffect(() => {
+    if (selectedId && !elements.some((element) => element.id === selectedId))
+      setSelectedId(null);
+  }, [elements, selectedId]);
+
+  useEffect(() => {
+    function handleShortcut(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      if (target?.matches("input, textarea, [contenteditable='true']")) return;
+      if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+      const key = event.key.toLowerCase();
+      if (key === "z") {
+        event.preventDefault();
+        if (event.shiftKey) redo(); else undo();
+      } else if (key === "c" && !event.shiftKey && selectedId) {
+        event.preventDefault();
+        copySelected();
+      } else if (key === "v" && !event.shiftKey && clipboardRef.current) {
+        event.preventDefault();
+        pasteCopied();
+      }
+    }
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  });
   async function download() {
     if (!svgRef.current || exporting) return;
     setExporting(true);
@@ -94,6 +189,14 @@ export default function App() {
             </p>
           </div>
           <div className="header-actions">
+            <div className="history-actions" aria-label="Histórico de edição">
+              <button onClick={undo} disabled={past.length === 0} aria-label="Desfazer" title="Desfazer (Ctrl+Z)">
+                <Icon name="undo" />
+              </button>
+              <button onClick={redo} disabled={future.length === 0} aria-label="Refazer" title="Refazer (Ctrl+Shift+Z)">
+                <Icon name="redo" />
+              </button>
+            </div>
             <button
               onClick={() => setDialog("clear")}
               disabled={elements.length === 0}
@@ -134,6 +237,8 @@ export default function App() {
               selectedId={selectedId}
               onSelect={setSelectedId}
               onChange={update}
+              onInteractionStart={startInteraction}
+              onInteractionEnd={endInteraction}
               svgRef={svgRef}
             />
             <div className="canvas-footer">
@@ -146,13 +251,14 @@ export default function App() {
             <p id="canvas-keyboard-help" className="sr-only">
               Use Tab para acessar os elementos. Enter ou Espaço seleciona. As
               setas movem 10 pixels; Shift e seta movem 1 pixel. Escape desfaz a
-              seleção.
+              seleção. Ctrl+Z desfaz, Ctrl+Shift+Z refaz e Ctrl+C/Ctrl+V duplica.
             </p>
           </section>
           <SelectionControls
             element={selected}
             onChange={update}
             onDelete={removeSelected}
+            onDuplicate={duplicateSelected}
           />
         </div>
         <div
@@ -191,7 +297,7 @@ export default function App() {
             {elements.length === 1
               ? "O elemento será removido"
               : `Todos os ${elements.length} elementos serão removidos`}
-            . Esta ação não pode ser desfeita.
+            . Você ainda poderá desfazer essa ação pelo histórico.
           </p>
           <p className="field-help">
             Se quiser guardar o ambiente, cancele e exporte uma imagem antes.
@@ -234,7 +340,7 @@ export default function App() {
           <p>
             Pelo teclado: Tab acessa os elementos; Enter seleciona; as setas
             movem. Use Shift + seta para um ajuste fino e Escape para desfazer a
-            seleção.
+            seleção. Ctrl+Z desfaz, Ctrl+Shift+Z refaz e Ctrl+C/Ctrl+V duplica.
           </p>
         </div>
         <div className="dialog-actions">

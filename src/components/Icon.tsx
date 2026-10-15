@@ -15,6 +15,9 @@ const paths = {
   grid: "M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z",
   lock: "M6 10V7a6 6 0 0 1 12 0v3M5 10h14v11H5z",
   unlock: "M8 10V7a5 5 0 0 1 9-3M5 10h14v11H5z",
+  undo: "M9 7 4 12l5 5M5 12h8a6 6 0 0 1 6 6",
+  redo: "m15 7 5 5-5 5m4-5h-8a6 6 0 0 0-6 6",
+  copy: "M8 8h11v11H8zM5 16H4V4h12v1",
 } as const;
 
 export function Icon({
