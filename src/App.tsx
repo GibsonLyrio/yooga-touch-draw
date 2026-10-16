@@ -6,6 +6,8 @@ import { Dialog } from "./components/Dialog";
 import { Icon } from "./components/Icon";
 import { createElement, duplicateElement, ELEMENTS } from "./editor/elements";
 import { exportPng } from "./editor/export";
+import { recordSnapshot, redoSnapshot, undoSnapshot } from "./editor/history";
+import { resolveEditorShortcut } from "./editor/shortcuts";
 import type { DrawingElement, ElementType } from "./editor/types";
 import yoogaSymbol from "./assets/yooga-symbol.png";
 
@@ -32,7 +34,7 @@ export default function App() {
     const current = elementsRef.current;
     if (next === current) return;
     if (record) {
-      const nextPast = [...pastRef.current, current].slice(-100);
+      const nextPast = recordSnapshot(pastRef.current, current);
       pastRef.current = nextPast;
       futureRef.current = [];
       setPast(nextPast);
@@ -42,27 +44,23 @@ export default function App() {
     setElements(next);
   }
   function undo() {
-    const previous = pastRef.current.at(-1);
-    if (!previous) return;
-    const nextPast = pastRef.current.slice(0, -1);
-    const nextFuture = [elementsRef.current, ...futureRef.current].slice(0, 100);
-    pastRef.current = nextPast;
-    futureRef.current = nextFuture;
-    setPast(nextPast);
-    setFuture(nextFuture);
-    replaceElements(previous, false);
+    const transition = undoSnapshot(pastRef.current, elementsRef.current, futureRef.current);
+    if (!transition) return;
+    pastRef.current = transition.past;
+    futureRef.current = transition.future;
+    setPast(transition.past);
+    setFuture(transition.future);
+    replaceElements(transition.present, false);
     announce("Última ação desfeita.");
   }
   function redo() {
-    const next = futureRef.current[0];
-    if (!next) return;
-    const nextPast = [...pastRef.current, elementsRef.current].slice(-100);
-    const nextFuture = futureRef.current.slice(1);
-    pastRef.current = nextPast;
-    futureRef.current = nextFuture;
-    setPast(nextPast);
-    setFuture(nextFuture);
-    replaceElements(next, false);
+    const transition = redoSnapshot(pastRef.current, elementsRef.current, futureRef.current);
+    if (!transition) return;
+    pastRef.current = transition.past;
+    futureRef.current = transition.future;
+    setPast(transition.past);
+    setFuture(transition.future);
+    replaceElements(transition.present, false);
     announce("Ação refeita.");
   }
   function startInteraction() {
@@ -72,7 +70,7 @@ export default function App() {
     const before = transactionRef.current;
     transactionRef.current = null;
     if (!before || before === elementsRef.current) return;
-    const nextPast = [...pastRef.current, before].slice(-100);
+    const nextPast = recordSnapshot(pastRef.current, before);
     pastRef.current = nextPast;
     futureRef.current = [];
     setPast(nextPast);
@@ -128,16 +126,17 @@ export default function App() {
   useEffect(() => {
     function handleShortcut(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
-      if (target?.matches("input, textarea, [contenteditable='true']")) return;
-      if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
-      const key = event.key.toLowerCase();
-      if (key === "z") {
+      const shortcut = resolveEditorShortcut(
+        event,
+        Boolean(target?.matches("input, textarea, [contenteditable='true']")),
+      );
+      if (shortcut === "undo" || shortcut === "redo") {
         event.preventDefault();
-        if (event.shiftKey) redo(); else undo();
-      } else if (key === "c" && !event.shiftKey && selectedId) {
+        if (shortcut === "redo") redo(); else undo();
+      } else if (shortcut === "copy" && selectedId) {
         event.preventDefault();
         copySelected();
-      } else if (key === "v" && !event.shiftKey && clipboardRef.current) {
+      } else if (shortcut === "paste" && clipboardRef.current) {
         event.preventDefault();
         pasteCopied();
       }

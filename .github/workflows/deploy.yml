@@ -18,8 +18,7 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.head_branch == 'main' &&
-       vars.ENABLE_VPS_DEPLOY == 'true')
+       github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     environment: vps-tests
     timeout-minutes: 10
