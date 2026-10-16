@@ -8,7 +8,7 @@ já consegue alcançá-lo.
 ## Primeira instalação na VPS
 
 ```bash
-git clone git@github.com:GibsonLyrio/yooga-touch-draw.git
+git clone git@github.com:<owner>/yooga-touch-draw.git
 cd yooga-touch-draw
 docker compose up -d --build
 docker exec yooga-touch-draw wget -qO- http://127.0.0.1:8000/healthz
@@ -58,3 +58,17 @@ O workflow requer um environment do GitHub chamado `vps-tests` com estes secrets
 O primeiro clone e a autorização da deploy key são etapas manuais. Recomenda-se
 proteger o environment `vps-tests` com aprovação até o primeiro deploy ter sido
 homologado.
+
+## Segurança operacional
+
+- Use uma chave SSH exclusiva para este deploy e limite-a ao acesso necessário.
+- Cadastre a chave privada somente como secret; nunca em `.env`, arquivos do
+  Compose, logs ou commits.
+- Verifique manualmente a fingerprint antes de preencher `VPS_KNOWN_HOSTS`.
+- Restrinja o usuário de deploy aos comandos e diretórios necessários.
+- Trate qualquer variável `VITE_*` como pública, pois ela é incorporada ao
+  bundle servido ao navegador.
+- Proteja o environment com aprovação e limite quem pode alterar workflows e
+  disparar deploys manuais.
+- Em caso de exposição, revogue e substitua a credencial; apagar o arquivo em
+  um commit posterior não elimina o valor do histórico Git.

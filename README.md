@@ -1,119 +1,123 @@
 # Yooga Touch Draw
 
-Editor visual de ambientes de restaurantes, inteiramente no navegador. Implementado com Vite, React, TypeScript estrito, SVG e CSS. O [PRD.md](./PRD.md) é a referência de produto.
+Editor visual e responsivo para organizar ambientes de restaurantes e exportar
+a composição em PNG. A aplicação roda inteiramente no navegador, sem login,
+backend, banco de dados, telemetria ou envio do desenho para serviços externos.
 
-## Executar
+> O nome e os elementos visuais da Yooga são usados neste projeto. Antes de
+> redistribuir ou publicar uma versão derivada, confira as permissões aplicáveis
+> à marca e aos assets. Consulte também a seção [Licença](#licença).
 
-Requer Node.js 22.12+ e npm (ou uma versão posterior compatível com o Vite 7).
+## Funcionalidades
+
+- cena SVG de 1200 × 800 px, adaptada para desktop e dispositivos móveis;
+- cômodos redimensionáveis, nomeáveis e bloqueáveis;
+- mesas, cadeiras e itens operacionais (impressora, computador, caixa,
+  cozinha, bar, estoque e geladeira);
+- seleção, arraste, rotação e redimensionamento por mouse, toque ou teclado;
+- duplicação e copiar/colar;
+- histórico local de até 100 estados, com desfazer e refazer;
+- exportação PNG em 2400 × 1600 px, sem grade nem controles de edição;
+- interface e diálogos acessíveis por teclado.
+
+O estado existe somente na memória da aba. Recarregar ou fechar a página apaga
+a composição; exporte o PNG antes de sair.
+
+## Requisitos e execução local
+
+- Node.js 22.12 ou posterior;
+- npm compatível com o lockfile.
 
 ```bash
 npm ci
 npm run dev
 ```
 
-Abra o endereço informado pelo Vite, normalmente `http://localhost:5173`.
+Abra o endereço informado pelo Vite, normalmente `http://localhost:5173`. O
+servidor de desenvolvimento escuta em `0.0.0.0`, portanto outro aparelho na
+mesma rede pode acessar `http://<IP-do-computador>:5173/`.
 
-Para acessar por outro aparelho na mesma rede, abra `http://<IP-do-computador>:5173/`. O servidor de desenvolvimento já escuta em `0.0.0.0`; a geração de IDs funciona também em HTTP, usando `crypto.getRandomValues()` quando `crypto.randomUUID()` não está disponível.
+## Comandos
 
 ```bash
-npm run typecheck
-npm test
-npm run build
-npm run preview
+npm test          # testes automatizados
+npm run typecheck # validação TypeScript
+npm run build     # tokens, typecheck e build de produção
+npm run preview   # serve o conteúdo de dist/ localmente
+npm run tokens    # regenera src/styles/tokens.css
 ```
 
-O build gera `dist/`. O preview normalmente usa `http://localhost:4173`.
+## Como usar
 
-## Uso
+1. Adicione um cômodo, móvel ou item operacional pela biblioteca.
+2. Selecione e arraste o item; use a alça no canto para redimensioná-lo.
+3. Ajuste nome, bloqueio, tamanho ou rotação no painel **Propriedades**.
+4. Duplique um elemento pelo painel ou com `Ctrl+C`/`Ctrl+V`.
+5. Use os botões de histórico, `Ctrl+Z` e `Ctrl+Shift+Z` para desfazer/refazer.
+6. Exporte a composição com **Exportar PNG**.
 
-1. Clique ou toque em um dos quatro elementos da biblioteca para inseri-lo.
-2. Arraste o elemento para posicionar. Clique no fundo para desfazer a seleção.
-3. Use o painel **Propriedades**, à direita no desktop e abaixo em telas menores, para girar em passos de 45°, ajustar tamanho entre 50% e 200% ou excluir. Mesas redondas não precisam de rotação.
-4. **Limpar desenho** remove todos os elementos após confirmação.
-5. **Exportar PNG** baixa `yooga-touch-draw.png`, com 2400 × 1600 pixels, fundo branco e sem grade ou seleção.
-
-Os botões funcionam por teclado; os objetos podem ser selecionados com Tab e Enter/Espaço. As setas movem o objeto focalizado em 10 pixels; Shift + seta move em 1 pixel; Escape desfaz a seleção. O arraste usa Pointer Events com captura de ponteiro, tanto para mouse quanto para toque. **Como usar** abre as instruções do editor.
-
-## Design system Yooga
-
-A interface aplica o [design system documentado](docs/design-system/README.md): Poppins local, paleta semântica Yooga, biblioteca em cards, canvas e painel contextual, estados de feedback e diálogos acessíveis. O layout usa três áreas no desktop e se reorganiza em tablet e celular, sem criar destinos de navegação fictícios.
-
-Os tokens de `docs/design-system/tokens.json` geram `src/styles/tokens.css` com `npm run tokens`. O build executa essa geração automaticamente; alterações de tokens durante desenvolvimento exigem executar o comando novamente. Tipografia em rem permite ampliação do texto. As fontes, a licença OFL e o símbolo oficial estão em `src/assets`, sem requisições externas durante o uso.
-
-A adoção não acrescenta backend, persistência, zoom ou histórico de alterações. As geometrias e cores dos objetos exportados permanecem preservadas. Veja [escopo e validação da implementação](docs/design-system/IMPLEMENTATION.md).
+Com um elemento focalizado, Enter ou Espaço seleciona, as setas movem 10 px,
+Shift + seta move 1 px e Escape remove a seleção. No macOS, os atalhos também
+aceitam Command.
 
 ## Estrutura
 
 ```text
 src/
-  components/
-    DrawingCanvas.tsx       # SVG, seleção e Pointer Events
-    ElementShape.tsx        # Formas compartilhadas pela biblioteca e cena
-    SelectionControls.tsx   # Rotação, tamanho e exclusão
-    Toolbar.tsx             # Inserção dos quatro tipos
-  editor/
-    types.ts                # Modelo de dados
-    elements.ts             # Catálogo, dimensões e criação
-    interactions.ts         # Coordenadas, limites, rotação e tamanho
-    interactions.test.ts    # Testes de inserção e geometria
-    export.ts               # Serialização SVG e rasterização PNG
-  App.tsx                   # Estado da sessão e composição da interface
-  main.tsx
-  index.css
+  components/       interface, canvas, formas, diálogos e propriedades
+  editor/           modelo, catálogo, geometria e exportação
+  assets/           símbolo e fontes locais
+  styles/           tokens CSS gerados
+docs/design-system/ especificação e referências do design system
+deploy/             configuração Nginx do container
 ```
 
-O estado é local ao React. A cena lógica mede 1200 × 800, independentemente da tela. A conversão de ponteiro usa a inversa de `getScreenCTM()`. As formas têm cores e contornos no próprio SVG, para preservar a aparência na exportação. A manipulação de DOM fica restrita às APIs de geometria/captura e à exportação de uma cópia da cena.
+O [PRD](PRD.md) registra o escopo original do produto. A documentação do
+[design system](docs/design-system/README.md) explica os tokens e decisões de
+interface. Os tokens de `docs/design-system/tokens.json` geram
+`src/styles/tokens.css`; não edite o arquivo gerado manualmente.
 
-## Build estático e caminho base
+## Build e deploy
 
-`VITE_BASE_PATH` define o prefixo dos assets no momento do build. O padrão é `/`. Também é possível criar `.env.local` a partir de `.env.example`. Refaça o build ao mudar o prefixo.
-
-**Vercel, na raiz:** preset Vite, comando `npm run build`, diretório de saída `dist`, variável `VITE_BASE_PATH=/`. Não há rotas de cliente nem necessidade de rewrites.
+`VITE_BASE_PATH` define o prefixo público dos assets no build. O padrão é `/`.
+Copie `.env.example` para `.env.local` apenas quando precisar de outra base;
+arquivos locais de ambiente não devem ser versionados.
 
 ```bash
 VITE_BASE_PATH=/ npm run build
-```
-
-**VPS, sob `/yooga-touch-draw/`:**
-
-```bash
 VITE_BASE_PATH=/yooga-touch-draw/ npm run build
-VITE_BASE_PATH=/yooga-touch-draw/ npm run preview
 ```
 
-Abra `http://localhost:4173/yooga-touch-draw/` para conferir. Para publicar posteriormente, sirva o conteúdo de `dist/` nesse prefixo. Exemplo de bloco Nginx a incorporar ao servidor existente (não aplicado por este projeto):
+O resultado estático fica em `dist/`. Para Vercel, use o preset Vite, comando
+`npm run build` e diretório `dist`. Para a imagem Docker e integração com
+Nginx/Caddy, consulte [docs/DEPLOY.md](docs/DEPLOY.md).
 
-```nginx
-# Conteúdo de dist/ em /var/www/yooga-touch-draw/
-location = /yooga-touch-draw {
-    return 301 /yooga-touch-draw/;
-}
-location /yooga-touch-draw/ {
-    root /var/www;
-    index index.html;
-    try_files $uri $uri/ =404;
-}
-```
+Importante: variáveis `VITE_*` são incorporadas ao bundle do navegador e nunca
+devem conter segredos.
 
-O repositório inclui uma imagem Nginx, `compose.yaml` e workflows de CI/CD. As instruções para integrar o container ao Caddy sem alterar as demais rotas estão em [docs/DEPLOY.md](docs/DEPLOY.md). Nenhum Docker, proxy ou serviço é necessário para desenvolver e validar o editor localmente.
+## Privacidade e segurança
 
-## Limitações e validação manual
+O editor não faz requisições para persistir a cena e não inclui analytics. As
+fontes e imagens usadas em runtime são locais. Credenciais de deploy ficam nos
+secrets do GitHub Actions, nunca em `.env.example` ou no código.
 
-- Não há persistência: recarregar ou fechar a página perde o desenho. Exporte antes de sair.
-- Sem desfazer/refazer, zoom, pan, rótulos ou medidas reais nesta etapa.
-- O ajuste de tamanho é proporcional. Objetos podem se sobrepor; os mais recentes ficam acima dos anteriores.
-- A cena inteira é exportada; não há recorte automático nem salvamento editável.
-- Em telas pequenas, a cena é reduzida para caber na largura. Layouts densos exigem maior cuidado ao selecionar objetos.
-- A publicação HTTPS e a homologação em aparelhos físicos dependem da etapa de deploy, ainda não executada.
+Para comunicar uma vulnerabilidade sem expô-la publicamente, siga a
+[política de segurança](SECURITY.md).
 
-Checklist manual: inserir múltiplas instâncias dos quatro tipos; selecionar e arrastar com mouse/toque até as bordas; girar e redimensionar uma mesa retangular; excluir; cancelar e confirmar a limpeza; exportar e verificar dimensões, fundo branco e ausência de controles; recarregar e verificar cena vazia. Repetir em Chromium, Firefox e Safari, desktop e celular, incluindo o build no subcaminho.
+## Limitações
 
-## Verificações da primeira entrega
+- não há persistência, importação de arquivos, colaboração ou compartilhamento
+  por link;
+- o histórico é apenas da sessão atual;
+- objetos podem se sobrepor e a exportação sempre inclui a cena inteira;
+- Firefox, Safari e aparelhos físicos ainda requerem homologação contínua.
 
-- TypeScript estrito e builds para `/` e `/yooga-touch-draw/`: aprovados.
-- Vitest: 18 testes aprovados de inserção, independência de instâncias, movimentação, limites, rotação e tamanho.
-- Auditoria npm após atualização do Vitest: zero vulnerabilidades reportadas.
-- Chromium com Playwright temporário, fora das dependências do projeto: fluxo de edição, confirmação/cancelamento de limpeza, seleção por teclado, recarga sem persistência e download nos dois builds aprovados.
-- Toque emulado: inserção, arraste, exportação e alvo mínimo de seleção de 44 pixels aprovados. Sem rolagem horizontal em larguras de 320, 390, 640 e 768 pixels.
-- PNG baixado validado em 2400 × 1600, com fundo branco, cores dos quatro elementos e sem pixels da grade ou seleção.
-- Firefox, Safari, aparelhos físicos e publicação HTTPS ainda precisam de homologação.
+## Licença
+
+Este repositório ainda não possui uma licença de software. Torná-lo público não
+concede automaticamente permissão para copiar, modificar ou redistribuir o
+código. Adicione uma licença compatível com a intenção do projeto antes de
+aceitar contribuições ou incentivar reutilização.
+
+A fonte Poppins é distribuída sob a SIL Open Font License; o aviso está em
+[`src/assets/fonts/OFL.txt`](src/assets/fonts/OFL.txt).
