@@ -100,19 +100,36 @@ export function ElementShape({ type, width: w, height: h, roomName }: Props) {
       return (
         <g {...style}>
           <rect x={-w / 2} y={-h / 2} width={w} height={h * 0.78} rx={7} fill="#dbeafe" />
-          <path d={`M ${-w * 0.27} ${-h * 0.3} V ${h * 0.12} M 0 ${-h * 0.3} V ${h * 0.12} M ${w * 0.27} ${-h * 0.3} V ${h * 0.12}`} fill="none" />
-          <path d={`M ${-w * 0.38} ${-h * 0.18} H ${-w * 0.16} M ${-w * 0.38} ${-h * 0.03} H ${-w * 0.16} M ${-w * 0.11} ${-h * 0.18} H ${w * 0.11} M ${-w * 0.11} ${-h * 0.03} H ${w * 0.11} M ${w * 0.16} ${-h * 0.18} H ${w * 0.38} M ${w * 0.16} ${-h * 0.03} H ${w * 0.38}`} fill="none" strokeWidth={1.8} />
+          {[
+            [-0.3, -0.27, "#f97066"],
+            [0, -0.27, "#fdb022"],
+            [0.3, -0.27, "#32d583"],
+            [-0.3, 0.02, "#7f56d9"],
+            [0, 0.02, "#2e90fa"],
+            [0.3, 0.02, "#f670c7"],
+          ].map(([x, y, color]) => (
+            <rect
+              key={`${x}-${y}`}
+              x={w * Number(x) - h * 0.105}
+              y={h * Number(y) - h * 0.105}
+              width={h * 0.21}
+              height={h * 0.21}
+              rx={3}
+              fill={String(color)}
+              stroke="none"
+            />
+          ))}
           <path d={`M 0 ${h * 0.28} V ${h * 0.44} M ${-w * 0.2} ${h * 0.44} H ${w * 0.2}`} fill="none" />
         </g>
       );
     case "self-service-kiosk":
       return (
         <g {...style}>
+          <rect x={-w * 0.07} y={h * 0.1} width={w * 0.14} height={h * 0.34} fill="#e2eaf3" />
+          <rect x={-w * 0.34} y={h * 0.4} width={w * 0.68} height={h * 0.09} rx={5} fill="#e2eaf3" />
           <rect x={-w * 0.42} y={-h / 2} width={w * 0.84} height={h * 0.62} rx={8} fill="#e0f2fe" />
           <rect x={-w * 0.29} y={-h * 0.38} width={w * 0.58} height={h * 0.3} rx={3} fill="#fff" />
           <circle cx={0} cy={h * 0.03} r={3} fill="#12b76a" stroke="none" />
-          <path d={`M 0 ${h * 0.12} V ${h * 0.36}`} fill="none" />
-          <path d={`M ${-w * 0.32} ${h * 0.48} Q 0 ${h * 0.35} ${w * 0.32} ${h * 0.48} Z`} fill="#e2eaf3" />
         </g>
       );
     case "checkout":
