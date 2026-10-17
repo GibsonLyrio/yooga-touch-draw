@@ -40,6 +40,8 @@ export const ELEMENTS: Record<
   chair: { label: "Cadeira", width: 56, height: 60, category: "furniture" },
   printer: { label: "Impressora", width: 76, height: 58, category: "operation" },
   computer: { label: "Computador", width: 90, height: 72, category: "operation" },
+  kds: { label: "KDS", width: 120, height: 82, category: "operation" },
+  "self-service-kiosk": { label: "Totem de autoatendimento", width: 72, height: 130, category: "operation" },
   checkout: { label: "Caixa", width: 110, height: 72, category: "operation" },
   kitchen: { label: "Cozinha", width: 180, height: 120, category: "operation" },
   bar: { label: "Bar", width: 190, height: 72, category: "operation" },

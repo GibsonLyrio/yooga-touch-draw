@@ -5,6 +5,8 @@ export type ElementType =
   | "chair"
   | "printer"
   | "computer"
+  | "kds"
+  | "self-service-kiosk"
   | "checkout"
   | "kitchen"
   | "bar"

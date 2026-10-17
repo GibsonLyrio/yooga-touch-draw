@@ -14,6 +14,12 @@ describe("biblioteca de elementos", () => {
     expect(preservedIcons).toHaveLength(Object.keys(ELEMENTS).length);
   });
 
+  it("oferece KDS e totem de autoatendimento", () => {
+    const markup = renderToStaticMarkup(<Toolbar onAdd={() => undefined} />);
+    expect(markup).toContain("Adicionar kds");
+    expect(markup).toContain("Adicionar totem de autoatendimento");
+  });
+
   it("mantém cards com altura própria dentro da área rolável", () => {
     const cssPath = fileURLToPath(new URL("../index.css", import.meta.url));
     const css = readFileSync(cssPath, "utf8");

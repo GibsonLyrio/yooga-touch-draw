@@ -96,6 +96,25 @@ export function ElementShape({ type, width: w, height: h, roomName }: Props) {
           <path d={`M 0 ${h * 0.2} V ${h * 0.42} M ${-w * 0.22} ${h * 0.42} H ${w * 0.22}`} fill="none" />
         </g>
       );
+    case "kds":
+      return (
+        <g {...style}>
+          <rect x={-w / 2} y={-h / 2} width={w} height={h * 0.78} rx={7} fill="#dbeafe" />
+          <path d={`M ${-w * 0.27} ${-h * 0.3} V ${h * 0.12} M 0 ${-h * 0.3} V ${h * 0.12} M ${w * 0.27} ${-h * 0.3} V ${h * 0.12}`} fill="none" />
+          <path d={`M ${-w * 0.38} ${-h * 0.18} H ${-w * 0.16} M ${-w * 0.38} ${-h * 0.03} H ${-w * 0.16} M ${-w * 0.11} ${-h * 0.18} H ${w * 0.11} M ${-w * 0.11} ${-h * 0.03} H ${w * 0.11} M ${w * 0.16} ${-h * 0.18} H ${w * 0.38} M ${w * 0.16} ${-h * 0.03} H ${w * 0.38}`} fill="none" strokeWidth={1.8} />
+          <path d={`M 0 ${h * 0.28} V ${h * 0.44} M ${-w * 0.2} ${h * 0.44} H ${w * 0.2}`} fill="none" />
+        </g>
+      );
+    case "self-service-kiosk":
+      return (
+        <g {...style}>
+          <rect x={-w * 0.42} y={-h / 2} width={w * 0.84} height={h * 0.62} rx={8} fill="#e0f2fe" />
+          <rect x={-w * 0.29} y={-h * 0.38} width={w * 0.58} height={h * 0.3} rx={3} fill="#fff" />
+          <circle cx={0} cy={h * 0.03} r={3} fill="#12b76a" stroke="none" />
+          <path d={`M 0 ${h * 0.12} V ${h * 0.36}`} fill="none" />
+          <path d={`M ${-w * 0.32} ${h * 0.48} Q 0 ${h * 0.35} ${w * 0.32} ${h * 0.48} Z`} fill="#e2eaf3" />
+        </g>
+      );
     case "checkout":
       return (
         <g {...style}>
