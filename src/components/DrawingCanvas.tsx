@@ -6,15 +6,15 @@ import {
   type RefObject,
 } from "react";
 import { ELEMENTS, orderElementsForDisplay, SCENE_HEIGHT, SCENE_WIDTH } from "../editor/elements";
-import { clientToScene, moveElement, resizeElementFromCorner } from "../editor/interactions";
-import type { DrawingElement, Point } from "../editor/types";
+import { clientToScene, moveElement, resizeElementFromCorner, selectElementsInArea, selectionArea } from "../editor/interactions";
+import type { DrawingElement, Point, SelectionArea } from "../editor/types";
 import { ElementShape } from "./ElementShape";
 import { Icon } from "./Icon";
 
 interface Props {
   elements: DrawingElement[];
-  selectedId: string | null;
-  onSelect: (id: string | null) => void;
+  selectedIds: string[];
+  onSelect: (ids: string[]) => void;
   onChange: (element: DrawingElement) => void;
   onInteractionStart: () => void;
   onInteractionEnd: () => void;
@@ -23,7 +23,7 @@ interface Props {
 
 export function DrawingCanvas({
   elements,
-  selectedId,
+  selectedIds,
   onSelect,
   onChange,
   onInteractionStart,
@@ -36,6 +36,8 @@ export function DrawingCanvas({
     offset?: Point;
     mode: "move" | "resize";
   } | null>(null);
+  const marquee = useRef<{ pointerId: number; start: Point } | null>(null);
+  const [marqueeArea, setMarqueeArea] = useState<SelectionArea | null>(null);
   const [minimumTarget, setMinimumTarget] = useState(44);
 
   useEffect(() => {
@@ -55,7 +57,7 @@ export function DrawingCanvas({
   ) {
     if (!event.isPrimary || event.button !== 0 || drag.current) return;
     event.stopPropagation();
-    onSelect(element.id);
+    onSelect([element.id]);
     if (element.locked) return;
     const svg = svgRef.current;
     if (!svg) return;
@@ -78,13 +80,22 @@ export function DrawingCanvas({
     if (!svg) return;
     event.stopPropagation();
     event.preventDefault();
-    onSelect(element.id);
+    onSelect([element.id]);
     onInteractionStart();
     svg.setPointerCapture(event.pointerId);
     drag.current = { pointerId: event.pointerId, element, mode: "resize" };
   }
 
   function handleMove(event: PointerEvent<SVGSVGElement>) {
+    const activeMarquee = marquee.current;
+    if (activeMarquee?.pointerId === event.pointerId) {
+      const point = clientToScene(event.currentTarget, event.clientX, event.clientY);
+      if (!point) return;
+      const area = selectionArea(activeMarquee.start, point);
+      setMarqueeArea(area);
+      onSelect(selectElementsInArea(elements, area));
+      return;
+    }
     const active = drag.current;
     if (!active || active.pointerId !== event.pointerId) return;
     const point = clientToScene(
@@ -104,6 +115,13 @@ export function DrawingCanvas({
   }
 
   function endDrag(event: PointerEvent<SVGSVGElement>) {
+    if (marquee.current?.pointerId === event.pointerId) {
+      marquee.current = null;
+      setMarqueeArea(null);
+      if (event.currentTarget.hasPointerCapture(event.pointerId))
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      return;
+    }
     if (drag.current?.pointerId !== event.pointerId) return;
     drag.current = null;
     onInteractionEnd();
@@ -122,7 +140,14 @@ export function DrawingCanvas({
         aria-label="Área de desenho do restaurante"
         aria-describedby="canvas-keyboard-help"
         onPointerDown={(event) => {
-          if (event.isPrimary && !drag.current) onSelect(null);
+          if (!event.isPrimary || event.button !== 0 || drag.current || marquee.current) return;
+          const point = clientToScene(event.currentTarget, event.clientX, event.clientY);
+          if (!point) return;
+          event.preventDefault();
+          onSelect([]);
+          marquee.current = { pointerId: event.pointerId, start: point };
+          setMarqueeArea(selectionArea(point, point));
+          event.currentTarget.setPointerCapture(event.pointerId);
         }}
         onPointerMove={handleMove}
         onPointerUp={endDrag}
@@ -130,6 +155,8 @@ export function DrawingCanvas({
         onLostPointerCapture={() => {
           if (drag.current) onInteractionEnd();
           drag.current = null;
+          marquee.current = null;
+          setMarqueeArea(null);
         }}
       >
         <rect width={SCENE_WIDTH} height={SCENE_HEIGHT} fill="#ffffff" />
@@ -162,12 +189,12 @@ export function DrawingCanvas({
                 ? element.roomName?.trim() || ELEMENTS[element.type].label
                 : ELEMENTS[element.type].label
             }
-            aria-pressed={element.id === selectedId}
+            aria-pressed={selectedIds.includes(element.id)}
             aria-describedby="canvas-keyboard-help"
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
-                onSelect(element.id);
+                onSelect([element.id]);
               }
               if (element.locked) return;
               const step = event.shiftKey ? 1 : 10;
@@ -180,7 +207,7 @@ export function DrawingCanvas({
               const delta = directions[event.key];
               if (delta) {
                 event.preventDefault();
-                onSelect(element.id);
+                onSelect([element.id]);
                 onChange(
                   moveElement(element, {
                     x: element.x + delta.x,
@@ -190,7 +217,7 @@ export function DrawingCanvas({
               }
               if (event.key === "Escape") {
                 event.preventDefault();
-                onSelect(null);
+                onSelect([]);
               }
             }}
           >
@@ -207,7 +234,7 @@ export function DrawingCanvas({
         ))}
         {/* A seleção fica acima da cena, sem interceptar outros objetos. */}
         {elements
-          .filter((element) => element.id === selectedId)
+          .filter((element) => selectedIds.includes(element.id))
           .map((element) => (
             <g
               key={element.id}
@@ -227,7 +254,7 @@ export function DrawingCanvas({
                 strokeDasharray="6 4"
                 vectorEffect="non-scaling-stroke"
               />
-              {!element.locked && (
+              {selectedIds.length === 1 && !element.locked && (
                 <circle
                   className="resize-handle"
                   cx={element.width / 2 + 6}
@@ -244,6 +271,18 @@ export function DrawingCanvas({
               )}
             </g>
           ))}
+        {marqueeArea && (
+          <rect
+            data-editor-only="true"
+            className="selection-marquee"
+            pointerEvents="none"
+            x={marqueeArea.x}
+            y={marqueeArea.y}
+            width={marqueeArea.width}
+            height={marqueeArea.height}
+            vectorEffect="non-scaling-stroke"
+          />
+        )}
       </svg>
       {elements.length === 0 && (
         <div className="empty-state">

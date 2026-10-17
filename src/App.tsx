@@ -15,7 +15,7 @@ export default function App() {
   const [elements, setElements] = useState<DrawingElement[]>([]);
   const [past, setPast] = useState<DrawingElement[][]>([]);
   const [future, setFuture] = useState<DrawingElement[][]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [exporting, setExporting] = useState(false);
   const [feedback, setFeedback] = useState({ text: "", error: false });
   const [dialog, setDialog] = useState<"clear" | "help" | null>(null);
@@ -25,7 +25,9 @@ export default function App() {
   const futureRef = useRef(future);
   const transactionRef = useRef<DrawingElement[] | null>(null);
   const clipboardRef = useRef<DrawingElement | null>(null);
-  const selected = elements.find((element) => element.id === selectedId);
+  const selected = selectedIds.length === 1
+    ? elements.find((element) => element.id === selectedIds[0])
+    : undefined;
 
   function announce(text: string, error = false) {
     setFeedback({ text, error });
@@ -79,7 +81,7 @@ export default function App() {
   function add(type: ElementType) {
     const element = createElement(type, elements);
     replaceElements(type === "room" ? [element, ...elementsRef.current] : [...elementsRef.current, element]);
-    setSelectedId(element.id);
+    setSelectedIds([element.id]);
     announce(`${ELEMENTS[type].label} adicionada.`);
   }
   function update(element: DrawingElement) {
@@ -87,21 +89,21 @@ export default function App() {
     replaceElements(next, transactionRef.current === null);
   }
   function removeSelected() {
-    replaceElements(elementsRef.current.filter((element) => element.id !== selectedId));
-    setSelectedId(null);
+    replaceElements(elementsRef.current.filter((element) => !selectedIds.includes(element.id)));
+    setSelectedIds([]);
     announce("Elemento excluído.");
     // The delete button leaves the DOM; return keyboard users to the drawing.
     svgRef.current?.focus();
   }
   function clear() {
     replaceElements([]);
-    setSelectedId(null);
+    setSelectedIds([]);
     setDialog(null);
     requestAnimationFrame(() => svgRef.current?.focus());
     announce("Desenho limpo. Seu espaço está pronto para uma nova ideia.");
   }
   function copySelected() {
-    const source = elementsRef.current.find((element) => element.id === selectedId);
+    const source = elementsRef.current.find((element) => element.id === selectedIds[0]);
     if (!source) return;
     clipboardRef.current = { ...source };
     announce("Elemento copiado. Use Ctrl+V para colar.");
@@ -110,7 +112,7 @@ export default function App() {
     if (!clipboardRef.current) return;
     const copy = duplicateElement(clipboardRef.current, elementsRef.current);
     replaceElements([...elementsRef.current, copy]);
-    setSelectedId(copy.id);
+    setSelectedIds([copy.id]);
     announce(`${ELEMENTS[copy.type].label} duplicado.`);
   }
   function duplicateSelected() {
@@ -119,9 +121,8 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (selectedId && !elements.some((element) => element.id === selectedId))
-      setSelectedId(null);
-  }, [elements, selectedId]);
+    setSelectedIds((current) => current.filter((id) => elements.some((element) => element.id === id)));
+  }, [elements]);
 
   useEffect(() => {
     function handleShortcut(event: KeyboardEvent) {
@@ -133,7 +134,7 @@ export default function App() {
       if (shortcut === "undo" || shortcut === "redo") {
         event.preventDefault();
         if (shortcut === "redo") redo(); else undo();
-      } else if (shortcut === "copy" && selectedId) {
+      } else if (shortcut === "copy" && selectedIds.length === 1) {
         event.preventDefault();
         copySelected();
       } else if (shortcut === "paste" && clipboardRef.current) {
@@ -233,8 +234,8 @@ export default function App() {
             </div>
             <DrawingCanvas
               elements={elements}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
+              selectedIds={selectedIds}
+              onSelect={setSelectedIds}
               onChange={update}
               onInteractionStart={startInteraction}
               onInteractionEnd={endInteraction}
@@ -243,18 +244,20 @@ export default function App() {
             <div className="canvas-footer">
               <span>
                 <Icon name="pointer" size={16} />
-                Selecione e arraste para organizar
+                Arraste no fundo para selecionar vários elementos
               </span>
               <span>1200 × 800 px</span>
             </div>
             <p id="canvas-keyboard-help" className="sr-only">
-              Use Tab para acessar os elementos. Enter ou Espaço seleciona. As
-              setas movem 10 pixels; Shift e seta movem 1 pixel. Escape desfaz a
-              seleção. Ctrl+Z desfaz, Ctrl+Shift+Z refaz e Ctrl+C/Ctrl+V duplica.
+              Arraste uma área vazia do desenho para selecionar vários elementos.
+              Use Tab para acessar os elementos. Enter ou Espaço seleciona. As setas
+              movem 10 pixels; Shift e seta movem 1 pixel. Escape desfaz a seleção.
+              Ctrl+Z desfaz, Ctrl+Shift+Z refaz e Ctrl+C/Ctrl+V duplica.
             </p>
           </section>
           <SelectionControls
             element={selected}
+            selectedCount={selectedIds.length}
             onChange={update}
             onDelete={removeSelected}
             onDuplicate={duplicateSelected}
@@ -324,7 +327,7 @@ export default function App() {
           </li>
           <li>
             <strong>Organize o ambiente</strong>
-            <p>Arraste os itens e use a alça no canto para redimensionar. Cômodos também podem ser bloqueados.</p>
+            <p>Arraste os itens para organizar ou arraste no fundo para selecionar vários. Use a alça no canto para redimensionar.</p>
           </li>
           <li>
             <strong>Leve sua ideia com você</strong>

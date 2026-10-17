@@ -1,5 +1,33 @@
 import { ELEMENTS, SCENE_HEIGHT, SCENE_WIDTH } from "./elements";
-import type { DrawingElement, Point } from "./types";
+import type { DrawingElement, Point, SelectionArea } from "./types";
+
+export function selectionArea(start: Point, end: Point): SelectionArea {
+  return {
+    x: Math.min(start.x, end.x),
+    y: Math.min(start.y, end.y),
+    width: Math.abs(end.x - start.x),
+    height: Math.abs(end.y - start.y),
+  };
+}
+
+/** Retorna os objetos cujo contorno visual toca a área de seleção. */
+export function selectElementsInArea(
+  elements: DrawingElement[],
+  area: SelectionArea,
+): string[] {
+  const right = area.x + area.width;
+  const bottom = area.y + area.height;
+  return elements
+    .filter((element) => {
+      const bounds = rotatedBounds(element);
+      const left = element.x - bounds.width / 2;
+      const elementRight = element.x + bounds.width / 2;
+      const top = element.y - bounds.height / 2;
+      const elementBottom = element.y + bounds.height / 2;
+      return left <= right && elementRight >= area.x && top <= bottom && elementBottom >= area.y;
+    })
+    .map((element) => element.id);
+}
 
 export function rotatedBounds(element: DrawingElement): {
   width: number;

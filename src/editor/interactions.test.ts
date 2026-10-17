@@ -6,6 +6,8 @@ import {
   resizeElementFromCorner,
   rotateElement,
   rotatedBounds,
+  selectElementsInArea,
+  selectionArea,
 } from "./interactions";
 import type { DrawingElement, ElementType } from "./types";
 
@@ -166,6 +168,35 @@ describe("geometria", () => {
       expect(resized.width).toBeLessThanOrEqual(SCENE_WIDTH);
       expect(resized.height).toBeLessThanOrEqual(SCENE_HEIGHT);
     }
+  });
+});
+
+describe("seleção por área", () => {
+  const element = (id: string, x: number, y: number, overrides = {}): DrawingElement => ({
+    id, type: "chair", x, y, width: 40, height: 40, rotation: 0, locked: false, ...overrides,
+  });
+
+  it("normaliza a área ao arrastar em qualquer direção", () => {
+    expect(selectionArea({ x: 300, y: 250 }, { x: 100, y: 50 })).toEqual({
+      x: 100, y: 50, width: 200, height: 200,
+    });
+  });
+
+  it("seleciona todos os elementos que tocam a área e ignora os demais", () => {
+    const elements = [element("dentro", 100, 100), element("borda", 220, 100), element("fora", 300, 100)];
+    expect(selectElementsInArea(elements, { x: 80, y: 80, width: 120, height: 40 }))
+      .toEqual(["dentro", "borda"]);
+  });
+
+  it("considera o contorno de elementos rotacionados", () => {
+    const rotated = element("girado", 100, 100, { width: 100, height: 20, rotation: 45 });
+    expect(selectElementsInArea([rotated], { x: 130, y: 130, width: 10, height: 10 }))
+      .toEqual(["girado"]);
+  });
+
+  it("retorna uma seleção vazia quando a área não toca elementos", () => {
+    expect(selectElementsInArea([element("cadeira", 100, 100)], { x: 400, y: 400, width: 50, height: 50 }))
+      .toEqual([]);
   });
 });
 

@@ -385,6 +385,12 @@ p {
 .resize-handle {
   cursor: nwse-resize;
 }
+.selection-marquee {
+  fill: color-mix(in srgb, var(--y-color-action-solid) 12%, transparent);
+  stroke: var(--y-color-border-selected);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+}
 .empty-state {
   position: absolute;
   inset: 0;

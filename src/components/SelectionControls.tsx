@@ -6,12 +6,13 @@ import { Icon } from "./Icon";
 
 interface Props {
   element: DrawingElement | undefined;
+  selectedCount: number;
   onChange: (element: DrawingElement) => void;
   onDelete: () => void;
   onDuplicate: () => void;
 }
 
-export function SelectionControls({ element, onChange, onDelete, onDuplicate }: Props) {
+export function SelectionControls({ element, selectedCount, onChange, onDelete, onDuplicate }: Props) {
   const scale = element
     ? Math.round((element.width / ELEMENTS[element.type].width) * 100)
     : 100;
@@ -145,6 +146,12 @@ export function SelectionControls({ element, onChange, onDelete, onDuplicate }: 
             No desenho, use as setas do teclado para mover o elemento.
           </p>
         </>
+      ) : selectedCount > 1 ? (
+        <div className="selection-empty">
+          <span className="empty-icon"><Icon name="pointer" size={28} /></span>
+          <h3>{selectedCount} elementos selecionados</h3>
+          <p>As propriedades ficam disponíveis ao selecionar apenas um elemento.</p>
+        </div>
       ) : (
         <div className="selection-empty">
           <span className="empty-icon">
