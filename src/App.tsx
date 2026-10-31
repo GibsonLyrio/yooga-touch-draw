@@ -5,7 +5,7 @@ import { Toolbar } from "./components/Toolbar";
 import { Dialog } from "./components/Dialog";
 import { Icon } from "./components/Icon";
 import { CustomerIdentification } from "./components/CustomerIdentification";
-import { createElement, duplicateElement, ELEMENTS } from "./editor/elements";
+import { createElement, duplicateElements, ELEMENTS } from "./editor/elements";
 import { exportPng } from "./editor/export";
 import { recordSnapshot, redoSnapshot, undoSnapshot } from "./editor/history";
 import { resolveEditorShortcut } from "./editor/shortcuts";
@@ -33,7 +33,7 @@ function Editor() {
   const pastRef = useRef(past);
   const futureRef = useRef(future);
   const transactionRef = useRef<DrawingElement[] | null>(null);
-  const clipboardRef = useRef<DrawingElement | null>(null);
+  const clipboardRef = useRef<DrawingElement[]>([]);
   const selected = selectedIds.length === 1
     ? elements.find((element) => element.id === selectedIds[0])
     : undefined;
@@ -97,10 +97,15 @@ function Editor() {
     const next = elementsRef.current.map((item) => (item.id === element.id ? element : item));
     replaceElements(next, transactionRef.current === null);
   }
+  function updateMany(changed: DrawingElement[]) {
+    const byId = new Map(changed.map((element) => [element.id, element]));
+    const next = elementsRef.current.map((item) => byId.get(item.id) ?? item);
+    replaceElements(next, transactionRef.current === null);
+  }
   function removeSelected() {
     replaceElements(elementsRef.current.filter((element) => !selectedIds.includes(element.id)));
     setSelectedIds([]);
-    announce("Elemento excluído.");
+    announce(selectedIds.length > 1 ? "Elementos excluídos." : "Elemento excluído.");
     // The delete button leaves the DOM; return keyboard users to the drawing.
     svgRef.current?.focus();
   }
@@ -112,17 +117,18 @@ function Editor() {
     announce("Desenho limpo. Seu espaço está pronto para uma nova ideia.");
   }
   function copySelected() {
-    const source = elementsRef.current.find((element) => element.id === selectedIds[0]);
-    if (!source) return;
-    clipboardRef.current = { ...source };
-    announce("Elemento copiado. Use Ctrl+V para colar.");
+    const sources = elementsRef.current.filter((element) => selectedIds.includes(element.id));
+    if (sources.length === 0) return;
+    clipboardRef.current = sources.map((source) => ({ ...source }));
+    announce(`${sources.length === 1 ? "Elemento copiado" : `${sources.length} elementos copiados`}. Use Ctrl+V para colar.`);
   }
   function pasteCopied() {
-    if (!clipboardRef.current) return;
-    const copy = duplicateElement(clipboardRef.current, elementsRef.current);
-    replaceElements([...elementsRef.current, copy]);
-    setSelectedIds([copy.id]);
-    announce(`${ELEMENTS[copy.type].label} duplicado.`);
+    if (clipboardRef.current.length === 0) return;
+    const copies = duplicateElements(clipboardRef.current, elementsRef.current);
+    replaceElements([...elementsRef.current, ...copies]);
+    setSelectedIds(copies.map((copy) => copy.id));
+    const copy = copies[0];
+    announce(copies.length === 1 && copy ? `${ELEMENTS[copy.type].label} duplicado.` : `${copies.length} elementos duplicados.`);
   }
   function duplicateSelected() {
     copySelected();
@@ -143,10 +149,10 @@ function Editor() {
       if (shortcut === "undo" || shortcut === "redo") {
         event.preventDefault();
         if (shortcut === "redo") redo(); else undo();
-      } else if (shortcut === "copy" && selectedIds.length === 1) {
+      } else if (shortcut === "copy" && selectedIds.length > 0) {
         event.preventDefault();
         copySelected();
-      } else if (shortcut === "paste" && clipboardRef.current) {
+      } else if (shortcut === "paste" && clipboardRef.current.length > 0) {
         event.preventDefault();
         pasteCopied();
       }
@@ -246,6 +252,7 @@ function Editor() {
               selectedIds={selectedIds}
               onSelect={setSelectedIds}
               onChange={update}
+              onChangeMany={updateMany}
               onInteractionStart={startInteraction}
               onInteractionEnd={endInteraction}
               svgRef={svgRef}

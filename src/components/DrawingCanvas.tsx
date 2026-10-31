@@ -6,7 +6,7 @@ import {
   type RefObject,
 } from "react";
 import { ELEMENTS, orderElementsForDisplay, SCENE_HEIGHT, SCENE_WIDTH } from "../editor/elements";
-import { clientToScene, moveElement, resizeElementFromCorner, selectElementsInArea, selectionArea } from "../editor/interactions";
+import { clientToScene, moveElementsByDelta, resizeElementFromCorner, selectElementsInArea, selectionArea } from "../editor/interactions";
 import type { DrawingElement, Point, SelectionArea } from "../editor/types";
 import { ElementShape } from "./ElementShape";
 import { Icon } from "./Icon";
@@ -16,6 +16,7 @@ interface Props {
   selectedIds: string[];
   onSelect: (ids: string[]) => void;
   onChange: (element: DrawingElement) => void;
+  onChangeMany: (elements: DrawingElement[]) => void;
   onInteractionStart: () => void;
   onInteractionEnd: () => void;
   svgRef: RefObject<SVGSVGElement | null>;
@@ -26,14 +27,15 @@ export function DrawingCanvas({
   selectedIds,
   onSelect,
   onChange,
+  onChangeMany,
   onInteractionStart,
   onInteractionEnd,
   svgRef,
 }: Props) {
   const drag = useRef<{
     pointerId: number;
-    element: DrawingElement;
-    offset?: Point;
+    elements: DrawingElement[];
+    start?: Point;
     mode: "move" | "resize";
   } | null>(null);
   const marquee = useRef<{ pointerId: number; start: Point } | null>(null);
@@ -57,8 +59,11 @@ export function DrawingCanvas({
   ) {
     if (!event.isPrimary || event.button !== 0 || drag.current) return;
     event.stopPropagation();
-    onSelect([element.id]);
-    if (element.locked) return;
+    const selection = selectedIds.includes(element.id)
+      ? elements.filter((item) => selectedIds.includes(item.id))
+      : [element];
+    if (!selectedIds.includes(element.id)) onSelect([element.id]);
+    if (selection.every((item) => item.locked)) return;
     const svg = svgRef.current;
     if (!svg) return;
     const point = clientToScene(svg, event.clientX, event.clientY);
@@ -68,8 +73,8 @@ export function DrawingCanvas({
     svg.setPointerCapture(event.pointerId);
     drag.current = {
       pointerId: event.pointerId,
-      element,
-      offset: { x: point.x - element.x, y: point.y - element.y },
+      elements: selection,
+      start: point,
       mode: "move",
     };
   }
@@ -83,7 +88,7 @@ export function DrawingCanvas({
     onSelect([element.id]);
     onInteractionStart();
     svg.setPointerCapture(event.pointerId);
-    drag.current = { pointerId: event.pointerId, element, mode: "resize" };
+    drag.current = { pointerId: event.pointerId, elements: [element], mode: "resize" };
   }
 
   function handleMove(event: PointerEvent<SVGSVGElement>) {
@@ -105,11 +110,12 @@ export function DrawingCanvas({
     );
     if (!point) return;
     if (active.mode === "resize") {
-      onChange(resizeElementFromCorner(active.element, point));
-    } else if (active.offset) {
-      onChange(moveElement(active.element, {
-        x: point.x - active.offset.x,
-        y: point.y - active.offset.y,
+      const element = active.elements[0];
+      if (element) onChange(resizeElementFromCorner(element, point));
+    } else if (active.start) {
+      onChangeMany(moveElementsByDelta(active.elements, {
+        x: point.x - active.start.x,
+        y: point.y - active.start.y,
       }));
     }
   }
@@ -207,13 +213,11 @@ export function DrawingCanvas({
               const delta = directions[event.key];
               if (delta) {
                 event.preventDefault();
-                onSelect([element.id]);
-                onChange(
-                  moveElement(element, {
-                    x: element.x + delta.x,
-                    y: element.y + delta.y,
-                  }),
-                );
+                const selection = selectedIds.includes(element.id)
+                  ? elements.filter((item) => selectedIds.includes(item.id))
+                  : [element];
+                if (!selectedIds.includes(element.id)) onSelect([element.id]);
+                onChangeMany(moveElementsByDelta(selection, delta));
               }
               if (event.key === "Escape") {
                 event.preventDefault();

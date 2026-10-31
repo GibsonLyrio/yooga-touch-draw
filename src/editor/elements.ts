@@ -30,6 +30,34 @@ export function duplicateElement(
   return copy;
 }
 
+/** Duplica uma seleção inteira com um deslocamento uniforme. */
+export function duplicateElements(
+  sources: DrawingElement[],
+  scene: DrawingElement[],
+): DrawingElement[] {
+  if (sources.length === 0) return [];
+  let dx = 24;
+  let dy = 24;
+  for (let attempt = 1; attempt <= 12; attempt++) {
+    const requested = attempt * 24;
+    const minDx = Math.max(...sources.map((source) => source.width / 2 - source.x));
+    const maxDx = Math.min(...sources.map((source) => SCENE_WIDTH - source.width / 2 - source.x));
+    const minDy = Math.max(...sources.map((source) => source.height / 2 - source.y));
+    const maxDy = Math.min(...sources.map((source) => SCENE_HEIGHT - source.height / 2 - source.y));
+    dx = Math.min(maxDx, Math.max(minDx, requested));
+    dy = Math.min(maxDy, Math.max(minDy, requested));
+    if (!sources.some((source) => scene.some((element) =>
+      Math.hypot(element.x - (source.x + dx), element.y - (source.y + dy)) < 16,
+    ))) break;
+  }
+  return sources.map((source) => ({
+    ...source,
+    id: createElementId(),
+    x: source.x + dx,
+    y: source.y + dy,
+  }));
+}
+
 export const ELEMENTS: Record<
   ElementType,
   { label: string; width: number; height: number; category: "space" | "furniture" | "operation" }

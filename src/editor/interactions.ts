@@ -61,6 +61,33 @@ export function moveElement(
   };
 }
 
+/** Move um conjunto como uma unidade, preservando as distâncias relativas. */
+export function moveElementsByDelta(
+  elements: DrawingElement[],
+  delta: Point,
+): DrawingElement[] {
+  const movable = elements.filter((element) => !element.locked);
+  if (movable.length === 0) return elements;
+
+  const margin = 4;
+  let minDx = -Infinity;
+  let maxDx = Infinity;
+  let minDy = -Infinity;
+  let maxDy = Infinity;
+  for (const element of movable) {
+    const bounds = rotatedBounds(element);
+    minDx = Math.max(minDx, margin + bounds.width / 2 - element.x);
+    maxDx = Math.min(maxDx, SCENE_WIDTH - margin - bounds.width / 2 - element.x);
+    minDy = Math.max(minDy, margin + bounds.height / 2 - element.y);
+    maxDy = Math.min(maxDy, SCENE_HEIGHT - margin - bounds.height / 2 - element.y);
+  }
+  const dx = Math.min(maxDx, Math.max(minDx, delta.x));
+  const dy = Math.min(maxDy, Math.max(minDy, delta.y));
+  return elements.map((element) => element.locked
+    ? element
+    : { ...element, x: element.x + dx, y: element.y + dy });
+}
+
 export function resizeElementFromCorner(
   element: DrawingElement,
   pointer: Point,

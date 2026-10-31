@@ -151,6 +151,16 @@ export function SelectionControls({ element, selectedCount, onChange, onDelete, 
           <span className="empty-icon"><Icon name="pointer" size={28} /></span>
           <h3>{selectedCount} elementos selecionados</h3>
           <p>As propriedades ficam disponíveis ao selecionar apenas um elemento.</p>
+          <div className="selection-actions">
+            <button onClick={onDuplicate} title="Duplicar (Ctrl+C, Ctrl+V)">
+              <Icon name="copy" />
+              Duplicar seleção
+            </button>
+            <button className="danger" onClick={onDelete}>
+              <Icon name="trash" />
+              Excluir seleção
+            </button>
+          </div>
         </div>
       ) : (
         <div className="selection-empty">

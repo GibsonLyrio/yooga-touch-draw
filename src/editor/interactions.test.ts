@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { createElement, duplicateElement, ELEMENTS, orderElementsForDisplay, SCENE_HEIGHT, SCENE_WIDTH } from "./elements";
+import { createElement, duplicateElement, duplicateElements, ELEMENTS, orderElementsForDisplay, SCENE_HEIGHT, SCENE_WIDTH } from "./elements";
 import {
   moveElement,
+  moveElementsByDelta,
   resizeElement,
   resizeElementFromCorner,
   rotateElement,
@@ -34,6 +35,34 @@ describe("inserção", () => {
     expect(copy.id).not.toBe(source.id);
     expect(copy.x).not.toBe(source.x);
     expect(copy.y).not.toBe(source.y);
+  });
+
+  it("duplica múltiplos elementos preservando a composição e propriedades", () => {
+    const room = { ...createElement("room", []), x: 300, y: 250, locked: true, roomName: "Salão" };
+    const chair = { ...createElement("chair", []), x: 430, y: 330, rotation: 45 };
+    const copies = duplicateElements([room, chair], [room, chair]);
+    expect(copies).toHaveLength(2);
+    expect(copies.map((copy) => copy.id)).not.toEqual([room.id, chair.id]);
+    expect(copies[1]!.x - copies[0]!.x).toBe(chair.x - room.x);
+    expect(copies[1]!.y - copies[0]!.y).toBe(chair.y - room.y);
+    expect(copies[0]).toMatchObject({ locked: true, roomName: "Salão" });
+    expect(copies[1]).toMatchObject({ rotation: 45 });
+  });
+
+  it("mantém a seleção duplicada dentro da cena com deslocamento uniforme", () => {
+    const sources = [
+      { ...createElement("chair", []), x: 1100, y: 700 },
+      { ...createElement("rect-table", []), x: 1110, y: 730 },
+    ];
+    const copies = duplicateElements(sources, sources);
+    const deltas = copies.map((copy, index) => ({
+      x: copy.x - sources[index]!.x, y: copy.y - sources[index]!.y,
+    }));
+    expect(deltas[0]).toEqual(deltas[1]);
+    for (const copy of copies) {
+      expect(copy.x + copy.width / 2).toBeLessThanOrEqual(SCENE_WIDTH);
+      expect(copy.y + copy.height / 2).toBeLessThanOrEqual(SCENE_HEIGHT);
+    }
   });
 
   it("cria elementos distintos sem randomUUID em HTTP na rede local", () => {
@@ -98,6 +127,31 @@ describe("geometria", () => {
       y: 300,
     });
     expect(table.x).toBe(600);
+  });
+
+  it("move uma seleção como unidade e preserva as distâncias relativas", () => {
+    const chair = { ...createElement("chair", []), x: 300, y: 250 };
+    const moved = moveElementsByDelta([table, chair], { x: 80, y: -30 });
+    expect(moved.map(({ x, y }) => ({ x, y }))).toEqual([
+      { x: 680, y: 370 }, { x: 380, y: 220 },
+    ]);
+    expect(moved[0]!.x - moved[1]!.x).toBe(table.x - chair.x);
+  });
+
+  it("limita o deslocamento do grupo pela primeira borda atingida", () => {
+    const left = { ...createElement("chair", []), x: 40, y: 200 };
+    const right = { ...createElement("chair", []), x: 1100, y: 200 };
+    const moved = moveElementsByDelta([left, right], { x: 500, y: 0 });
+    expect(moved[0]!.x - left.x).toBe(moved[1]!.x - right.x);
+    expect(moved[1]!.x + moved[1]!.width / 2).toBeLessThanOrEqual(SCENE_WIDTH);
+  });
+
+  it("mantém itens bloqueados parados ao mover uma seleção", () => {
+    const locked = { ...createElement("room", []), locked: true };
+    const chair = createElement("chair", []);
+    const moved = moveElementsByDelta([locked, chair], { x: 50, y: 25 });
+    expect(moved[0]).toBe(locked);
+    expect(moved[1]).toMatchObject({ x: chair.x + 50, y: chair.y + 25 });
   });
 
   it("considera largura e altura após rotação", () => {
