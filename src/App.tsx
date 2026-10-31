@@ -4,6 +4,7 @@ import { SelectionControls } from "./components/SelectionControls";
 import { Toolbar } from "./components/Toolbar";
 import { Dialog } from "./components/Dialog";
 import { Icon } from "./components/Icon";
+import { CustomerIdentification } from "./components/CustomerIdentification";
 import { createElement, duplicateElement, ELEMENTS } from "./editor/elements";
 import { exportPng } from "./editor/export";
 import { recordSnapshot, redoSnapshot, undoSnapshot } from "./editor/history";
@@ -12,6 +13,14 @@ import type { DrawingElement, ElementType } from "./editor/types";
 import yoogaSymbol from "./assets/yooga-symbol.png";
 
 export default function App() {
+  const [customerWhatsapp, setCustomerWhatsapp] = useState<string | null>(null);
+
+  return customerWhatsapp === null
+    ? <CustomerIdentification onContinue={setCustomerWhatsapp} />
+    : <Editor />;
+}
+
+function Editor() {
   const [elements, setElements] = useState<DrawingElement[]>([]);
   const [past, setPast] = useState<DrawingElement[][]>([]);
   const [future, setFuture] = useState<DrawingElement[][]>([]);

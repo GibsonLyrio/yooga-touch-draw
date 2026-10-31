@@ -136,6 +136,72 @@ p {
 .skip-link:focus {
   transform: translateY(0);
 }
+.identification-page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 32px 16px;
+  background:
+    radial-gradient(circle at 20% 10%, var(--y-color-surface-selected), transparent 34%),
+    var(--y-color-surface-canvas);
+}
+.identification-card {
+  width: min(100%, 480px);
+  padding: 40px;
+  background: var(--y-color-surface-base);
+  border-radius: var(--y-radius-lg);
+  box-shadow: var(--y-shadow-overlay);
+}
+.identification-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 40px;
+}
+.identification-card h1 {
+  margin-top: 4px;
+  font-size: 1.75rem;
+  line-height: 1.35;
+}
+.identification-description {
+  margin-top: 12px;
+  color: var(--y-color-text-secondary);
+  font-size: 0.875rem;
+}
+.identification-card form {
+  margin-top: 28px;
+}
+.identification-card label {
+  display: block;
+  color: var(--y-color-text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.identification-card input {
+  width: 100%;
+  min-height: 52px;
+  margin-top: 8px;
+  padding: 12px 14px;
+  color: var(--y-color-text-primary);
+  background: var(--y-color-surface-base);
+  border: 1px solid var(--y-color-border-control);
+  border-radius: var(--y-radius-md);
+  font-size: 1rem;
+  letter-spacing: 0.2px;
+}
+.identification-card input[aria-invalid="true"] {
+  border-color: var(--y-color-action-destructive);
+}
+.field-error {
+  min-height: 20px;
+  margin-top: 4px;
+  color: var(--y-color-status-error-foreground);
+  font-size: 0.75rem;
+}
+.identification-submit {
+  width: 100%;
+  margin-top: 12px;
+}
 .app-header {
   min-height: 80px;
   padding: 16px 32px;
